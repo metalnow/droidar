@@ -61,6 +61,8 @@ public class FpvCameraView extends CameraView implements Runnable {
     private float scale_x, scale_y, pos_x;
 	private Matrix mx_canvas = new Matrix();
 	
+	private boolean detectingCamera = false;
+	
     // JNI functions
     public native int prepareCamera(int videoid);
     public native int prepareCameraWithBase(int videoid, int camerabase);
@@ -89,9 +91,44 @@ public class FpvCameraView extends CameraView implements Runnable {
 			bmp = Bitmap.createBitmap(IMG_WIDTH, IMG_HEIGHT, Bitmap.Config.ARGB_8888);
 		}
 		// /dev/videox (x=cameraId + cameraBase) is used
-		int ret = prepareCameraWithBase(cameraId, cameraBase);
+		//int ret = prepareCameraWithBase(cameraId, cameraBase);		
+		//if(ret!=-1) cameraExists = true;
 		
-		if(ret!=-1) cameraExists = true;
+		detectingCamera = true;
+		
+		Thread detectThread = new Thread() {
+            public void run() {
+                int ret = -1;
+                int camID = 0;
+                int camBase = cameraBase;
+                do {
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+                    ret = prepareCameraWithBase(camID, camBase);
+                    if(DEBUG) Log.d("WebCam", "Detect: " + ret + " base: " + camBase + " camID: " + camID);
+                    camID++;
+                    if ( camID == cameraId + 1 ){
+                        if ( camBase == 0 )
+                            camBase = 4;
+                        else
+                            camBase = 0;
+                    }
+                    camID = camID % (cameraId+1);
+                }while ( ret == -1 );
+                cameraExists = (ret!=-1);
+                detectingCamera = false;
+            }
+        };
+        detectThread.start();		
+		
+        // Busy Waiting
+		while( detectingCamera ) {
+			
+		}
 		
         mainLoop = new Thread(this);
         mainLoop.start();				
