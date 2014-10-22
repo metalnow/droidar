@@ -186,7 +186,7 @@ public class GeoUtils {
 	 * @param context
 	 * @return the current location
 	 */
-	@Deprecated
+	//@Deprecated
 	public static Location getCurrentLocation(Context context) {
 		return SimpleLocationManager.getInstance(context).getCurrentLocation();
 	}
@@ -198,7 +198,7 @@ public class GeoUtils {
 	 * 
 	 * @return
 	 */
-	@Deprecated
+	//@Deprecated
 	public Location getCurrentLocation() {
 		return getCurrentLocation(myContext);
 	}
@@ -210,7 +210,7 @@ public class GeoUtils {
 	 * @param accuracy
 	 * @return
 	 */
-	@Deprecated
+	//@Deprecated
 	public static Location getCurrentLocation(Context context, int accuracy) {
 		return SimpleLocationManager.getInstance(context).getCurrentLocation(
 				accuracy);

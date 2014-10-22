@@ -25,6 +25,7 @@ import de.rwth.setups.CollectItemsSetup;
 import de.rwth.setups.DebugSetup;
 import de.rwth.setups.FarAwayPOIScenarioSetup;
 import de.rwth.setups.FastChangingTextSetup;
+import de.rwth.setups.FpvArSetup;
 import de.rwth.setups.GameDemoSetup;
 import de.rwth.setups.GeoPosTestSetup;
 import de.rwth.setups.GraphCreationSetup;
@@ -69,6 +70,7 @@ public class TechDemoLauncher extends Activity {
 		showSetup("Graph creation Test", new GraphCreationSetup());
 		showSetup("Sensor Processing Demo", new SensorTestSetup());
 		showSetup("Position tests", new PositionTestsSetup());
+		showSetup("FPV Demo", new FpvArSetup());
 
 		l.addView(new SimpleButton(
 				"deviceHasLargeScreenAndOrientationFlipped = "

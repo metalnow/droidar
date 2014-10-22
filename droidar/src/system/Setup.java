@@ -40,6 +40,7 @@ import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.Surface;
+import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup.LayoutParams;
 import android.view.Window;
@@ -326,7 +327,7 @@ public abstract class Setup {
 	public void initializeCamera() {
 
 		debugLogDoSetupStep(STEP7);
-		myCameraView = initCameraView(myTargetActivity);
+		myCameraView = (CameraView)initCameraView(myTargetActivity);
 
 	}
 
@@ -386,11 +387,11 @@ public abstract class Setup {
 		EventManager.initInstance(a, new EventManager());
 	}
 
-	protected CameraView initCameraView(Activity a) {
+	protected SurfaceView initCameraView(Activity a) {
 		if (isOldDeviceWhereNothingWorksAsExpected) {
 			return new CameraViewForOldDevices(a);
 		} else {
-			return new CameraView(a);
+			return new DeviceCameraView(a);
 		}
 	}
 

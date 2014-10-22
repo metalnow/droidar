@@ -3,7 +3,7 @@ package com.metalnow.fpvplaza;
 import gl.GL1Renderer;
 import gl.GLFactory;
 import system.ArActivity;
-import system.DefaultARSetup;
+import de.rwth.setups.FpvArSetup;
 import util.Vec;
 import worldData.World;
 import android.app.Activity;
@@ -27,13 +27,14 @@ public class MainActivity extends Activity {
         	
         	@Override
         	public void onClick(View v){
-        		ArActivity.startWithSetup(MainActivity.this, new DefaultARSetup()  {
-
+        		ArActivity.startWithSetup(MainActivity.this, new FpvArSetup()  {
+/*
 					@Override
 					public void addObjectsTo(GL1Renderer renderer, World world,
 							GLFactory objectFactory) {
 						world.add(objectFactory.newSolarSystem(new Vec(10,0,0)));
 					}
+*/					
         		});
         	}
         });

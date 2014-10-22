@@ -4,7 +4,7 @@ import android.content.Context;
 import android.content.res.Configuration;
 import android.hardware.Camera.Parameters;
 
-public class CameraViewForOldDevices extends CameraView {
+public class CameraViewForOldDevices extends DeviceCameraView {
 
 	public CameraViewForOldDevices(Context context) {
 		super(context);
