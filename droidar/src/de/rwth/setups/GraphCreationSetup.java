@@ -13,6 +13,7 @@ import gl.animations.AnimationPulse;
 import gl.scenegraph.MeshComponent;
 import gui.GuiSetup;
 import gui.MetaInfos;
+import system.AbstractEventManager;
 import system.ErrorHandler;
 import system.EventManager;
 import system.Setup;
@@ -69,7 +70,7 @@ public class GraphCreationSetup extends Setup {
 	}
 
 	@Override
-	public void _c_addActionsToEvents(EventManager eventManager,
+	public void _c_addActionsToEvents(AbstractEventManager eventManager,
 			CustomGLSurfaceView arView, SystemUpdater updater) {
 		arView.addOnTouchMoveAction(new ActionBufferedCameraAR(camera));
 		Action rot = new ActionRotateCameraBuffered(camera);

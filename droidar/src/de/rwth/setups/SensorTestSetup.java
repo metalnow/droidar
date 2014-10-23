@@ -10,6 +10,7 @@ import gl.animations.AnimationRotate;
 import gl.scenegraph.MeshComponent;
 import gl.scenegraph.Shape;
 import gui.GuiSetup;
+import system.AbstractEventManager;
 import system.ErrorHandler;
 import system.EventManager;
 import system.Setup;
@@ -122,7 +123,7 @@ public class SensorTestSetup extends Setup {
 	}
 
 	@Override
-	public void _c_addActionsToEvents(EventManager eventManager,
+	public void _c_addActionsToEvents(AbstractEventManager eventManager,
 			CustomGLSurfaceView arView, SystemUpdater updater) {
 		arView.addOnTouchMoveAction(new ActionBufferedCameraAR(camera));
 		eventManager.addOnOrientationChangedAction(rotActionB1);

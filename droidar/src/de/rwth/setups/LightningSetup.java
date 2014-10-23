@@ -14,6 +14,7 @@ import java.util.ArrayList;
 
 import javax.microedition.khronos.opengles.GL10;
 
+import system.AbstractEventManager;
 import system.DefaultARSetup;
 import system.EventManager;
 import util.Vec;
@@ -124,7 +125,7 @@ public class LightningSetup extends DefaultARSetup {
 	}
 
 	@Override
-	public void _c_addActionsToEvents(EventManager eventManager,
+	public void _c_addActionsToEvents(AbstractEventManager eventManager,
 			CustomGLSurfaceView arView, SystemUpdater updater) {
 		super._c_addActionsToEvents(eventManager, arView, updater);
 

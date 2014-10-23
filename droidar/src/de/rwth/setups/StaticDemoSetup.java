@@ -15,6 +15,7 @@ import gui.simpleUI.Theme;
 import gui.simpleUI.Theme.ThemeColors;
 import gui.simpleUI.modifiers.Headline;
 import gui.simpleUI.modifiers.InfoText;
+import system.AbstractEventManager;
 import system.ErrorHandler;
 import system.EventManager;
 import system.Setup;
@@ -224,7 +225,7 @@ public class StaticDemoSetup extends Setup {
 	}
 
 	@Override
-	public void _c_addActionsToEvents(EventManager eventManager,
+	public void _c_addActionsToEvents(AbstractEventManager eventManager,
 			CustomGLSurfaceView arView, SystemUpdater updater) {
 
 		ActionWASDMovement wasdAction = new ActionWASDMovement(camera, 25f,

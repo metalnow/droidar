@@ -6,6 +6,7 @@ import geo.GeoObj;
 import gl.CustomGLSurfaceView;
 import gl.GL1Renderer;
 import gl.GLFactory;
+import system.AbstractEventManager;
 import system.DefaultARSetup;
 import system.EventManager;
 import util.EfficientList;
@@ -46,7 +47,7 @@ public class GraphMovementTestSetup extends DefaultARSetup {
 	}
 
 	@Override
-	public void _c_addActionsToEvents(EventManager eventManager,
+	public void _c_addActionsToEvents(AbstractEventManager eventManager,
 			CustomGLSurfaceView arView, SystemUpdater updater) {
 
 		super._c_addActionsToEvents(eventManager, arView, updater);

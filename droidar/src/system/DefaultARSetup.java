@@ -86,7 +86,7 @@ public abstract class DefaultARSetup extends Setup {
 	}
 
 	@Override
-	public void _c_addActionsToEvents(final EventManager eventManager,
+	public void _c_addActionsToEvents(final AbstractEventManager eventManager,
 			CustomGLSurfaceView arView, SystemUpdater updater) {
 		wasdAction = new ActionWASDMovement(camera, 25, 50, 20);
 		rotateGLCameraAction = new ActionRotateCameraBuffered(camera);

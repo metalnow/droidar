@@ -10,6 +10,7 @@ import gl.scenegraph.MeshComponent;
 import gl.scenegraph.Shape;
 import gui.GuiSetup;
 import gui.InfoScreenSettings;
+import system.AbstractEventManager;
 import system.ErrorHandler;
 import system.EventManager;
 import system.Setup;
@@ -83,7 +84,7 @@ public class CollectItemsSetup extends Setup {
 	}
 
 	@Override
-	public void _c_addActionsToEvents(EventManager eventManager,
+	public void _c_addActionsToEvents(AbstractEventManager eventManager,
 			CustomGLSurfaceView arView, SystemUpdater updater) {
 		ActionMoveCameraBuffered move = new ActionMoveCameraBuffered(camera, 5,
 				25);

@@ -243,8 +243,7 @@ public abstract class Setup {
 
 		debugLogDoSetupStep(STEP4);
 		// setting up the sensor Listeners:
-		EventManager.getInstance().registerListeners(getActivity(),
-				this.useAccelAndMagnetoSensors);
+		_0_initEventManager();
 
 		debugLogDoSetupStep(STEP5);
 		_a_initFieldsIfNecessary();
@@ -525,6 +524,11 @@ public abstract class Setup {
 		}
 	}
 
+	public void _0_initEventManager() {
+		EventManager.getInstance().registerListeners(getActivity(),
+				this.useAccelAndMagnetoSensors);	
+	}
+	
 	/**
 	 * 
 	 * 
@@ -589,7 +593,7 @@ public abstract class Setup {
 	 *            -method can be used to react on touch-screen input
 	 * @param worldUpdater
 	 */
-	public abstract void _c_addActionsToEvents(EventManager eventManager,
+	public abstract void _c_addActionsToEvents(AbstractEventManager eventManager,
 			CustomGLSurfaceView arView, SystemUpdater updater);
 
 	/**
@@ -818,11 +822,11 @@ public abstract class Setup {
 	}
 
 	public void pauseEventManager() {
-		EventManager.getInstance().pauseEventListeners();
+		AbstractEventManager.getInstance().pauseEventListeners();
 	}
 
 	public void resumeEventManager() {
-		EventManager.getInstance().resumeEventListeners(myTargetActivity,
+		AbstractEventManager.getInstance().resumeEventListeners(myTargetActivity,
 				useAccelAndMagnetoSensors);
 	}
 
@@ -875,7 +879,7 @@ public abstract class Setup {
 
 	public boolean onKeyDown(Activity a, int keyCode, KeyEvent event) {
 		// if the keyAction isnt defined return false:
-		return EventManager.getInstance().onKeyDown(keyCode, event);
+		return AbstractEventManager.getInstance().onKeyDown(keyCode, event);
 	}
 
 	public float getScreenWidth() {

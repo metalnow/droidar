@@ -15,8 +15,10 @@ import actions.ActionWaitForAccuracy;
 import android.app.Activity;
 import android.location.Location;
 import android.view.SurfaceView;
+import system.AbstractEventManager;
 import system.EventManager;
 import system.FpvCameraView;
+import system.SerialEventManager;
 import system.Setup;
 import util.Log;
 import util.Vec;
@@ -39,6 +41,12 @@ public class FpvArSetup extends Setup {
 	}
 	
 	@Override
+	public void _0_initEventManager() {
+		SerialEventManager.getInstance().registerListeners(getActivity(),false);	
+	}
+	
+	
+	@Override
 	public void _a_initFieldsIfNecessary() {
 	}
 
@@ -57,7 +65,7 @@ public class FpvArSetup extends Setup {
 	}
 
 	@Override
-	public void _c_addActionsToEvents(EventManager eventManager,
+	public void _c_addActionsToEvents(AbstractEventManager eventManager,
 			CustomGLSurfaceView arView, SystemUpdater updater) {
 		
 		rotateGLCameraAction = new ActionRotateCameraBuffered(camera);
