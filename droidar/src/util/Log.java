@@ -132,4 +132,16 @@ public class Log {
 		return s;
 	}
 
+	public static String floatArrayToString(String name, float[] a) {
+		String s = "";
+		s += "Array: " + name + "\n";
+		for ( int i = 0 ; i < a.length; ++i ) {
+			s += a[i];
+			if ( i < a.length -1 )
+				s += "\t ";
+		}
+		s += "\n";
+		return s;
+	}
+	
 }

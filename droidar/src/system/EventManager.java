@@ -130,6 +130,17 @@ public class EventManager extends AbstractEventManager implements LocationListen
 	}
 
 	@Override
+	public void unregisterListener() {
+		super.unregisterListener();
+		SensorManager sensorManager = (SensorManager) myTargetActivity
+				.getSystemService(Context.SENSOR_SERVICE);
+		sensorManager.unregisterListener(this);
+
+		SimpleLocationManager.getInstance(myTargetActivity)
+				.pauseLocationManagerUpdates();		
+	}
+	
+	@Override
 	public void onAccuracyChanged(Sensor s, int accuracy) {
 		// Log.d("sensor onAccuracyChanged", arg0 + " " + arg1);
 	}
@@ -155,6 +166,7 @@ public class EventManager extends AbstractEventManager implements LocationListen
 				if (event.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {
 					onOrientationChangedList.get(i)
 							.onOrientationChanged(values);
+					//Log.d("sensor onOrientationChanged", Log.floatArrayToString("Rotation vector", values));
 				}
 			}
 		}
@@ -198,22 +210,6 @@ public class EventManager extends AbstractEventManager implements LocationListen
 					+ "(status=" + status + ")");
 		}
 
-	}
-
-	@Override
-	public void resumeEventListeners(Activity targetActivity,
-			boolean useAccelAndMagnetoSensors) {
-		registerListeners(targetActivity, useAccelAndMagnetoSensors);
-	}
-
-	@Override
-	public void pauseEventListeners() {
-		SensorManager sensorManager = (SensorManager) myTargetActivity
-				.getSystemService(Context.SENSOR_SERVICE);
-		sensorManager.unregisterListener(this);
-
-		SimpleLocationManager.getInstance(myTargetActivity)
-				.pauseLocationManagerUpdates();
 	}
 
 	/**

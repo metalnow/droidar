@@ -68,12 +68,14 @@ public abstract class AbstractEventManager {
 	protected static void initInstance(AbstractEventManager instance) {
 		myInstance = instance;
 	}	
-	
-	
+		
 	public void registerListeners(Activity targetActivity,
 								  boolean useAccelAndMagnetoSensors) {
 		myTargetActivity = targetActivity;		
 	}	
+	
+	public void unregisterListener() {
+	}
 	
 	/**
 	 * This method returns true if the device is a tablet, can be used to handle
@@ -93,9 +95,11 @@ public abstract class AbstractEventManager {
 	
 	public void resumeEventListeners(Activity targetActivity,
 			boolean useAccelAndMagnetoSensors) {
+		registerListeners(targetActivity, useAccelAndMagnetoSensors);
 	}
 
 	public void pauseEventListeners() {
+		unregisterListener();
 	}
 	
 	/**
