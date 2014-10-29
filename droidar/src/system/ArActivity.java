@@ -1,5 +1,11 @@
 package system;
 
+import java.io.IOException;
+
+import org.openpilot.uavtalk.UAVObject;
+
+import de.rwth.ObjectManagerActivity;
+import drone.DroneManager;
 import util.Log;
 import android.app.Activity;
 import android.content.Intent;
@@ -8,6 +14,9 @@ import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.TextView;
+
+import java.lang.Math;
 
 /**
  * This is an example activity which demonstrates how to use a Setup object. It
@@ -16,7 +25,7 @@ import android.view.MenuItem;
  * @author Simon Heinen
  * 
  */
-public class ArActivity extends Activity {
+public class ArActivity extends ObjectManagerActivity {
 
 	private static final String LOG_TAG = "ArActivity";
 
@@ -76,14 +85,14 @@ public class ArActivity extends Activity {
 	}
 
 	@Override
-	protected void onStart() {
+	public void onStart() {
 		if (mySetupToUse != null)
 			mySetupToUse.onStart(this);
 		super.onStart();
 	}
 
 	@Override
-	protected void onStop() {
+	public void onStop() {
 		if (mySetupToUse != null)
 			mySetupToUse.onStop(this);
 		super.onStop();
@@ -134,5 +143,75 @@ public class ArActivity extends Activity {
 			Log.d(LOG_TAG, "orientation changed to portrait");
 		super.onConfigurationChanged(newConfig);
 	}
+
+	@Override
+	protected void onOPConnected() {
+		super.onOPConnected();
+
+		registerObjectUpdates(objMngr.getObjects());
+	}
+	
+	/**
+	 * Called whenever any objects subscribed to via registerObjects
+	 */
+	@Override
+	protected void objectUpdated(UAVObject obj) {
+		
+		double pitch = obj.getField("Pitch").getDouble();
+		double roll = obj.getField("Roll").getDouble();		
+		//double hdg = obj.getField("Heading").getDouble();
+		double hdg = obj.getField("Yaw").getDouble();
+		
+		float[] angles = new float[3];
+		float[] left = new float[3];
+		float[] up = new float[3];
+		float[] forward = new float[3];
+		
+		angles[0] = (float)pitch;
+		angles[1] = (float)hdg;
+		angles[2] = (float)roll;
+		
+		anglesToAxes( angles, left, up, forward );
+		
+		DroneManager.droneManager().setRotationVector(up[0], up[1], up[2]);
+	}	
+	
+	private void anglesToAxes(float[] angles, float[] left, float[] up, float[] forward)
+	{
+	    float DEG2RAD = 3.141593f / 180;
+	    float sx, sy, sz, cx, cy, cz;
+	    double theta;
+
+	    // rotation angle about X-axis (pitch)
+	    theta = angles[0] * DEG2RAD;
+	    sx = (float)Math.sin(theta);
+	    cx = (float)Math.cos(theta);
+
+	    // rotation angle about Y-axis (yaw)
+	    theta = angles[1] * DEG2RAD;
+	    sy = (float)Math.sin(theta);
+	    cy = (float)Math.cos(theta);
+
+	    // rotation angle about Z-axis (roll)
+	    theta = angles[2] * DEG2RAD;
+	    sz = (float)Math.sin(theta);
+	    cz = (float)Math.cos(theta);
+
+	    // determine left axis
+	    left[0] = cy*cz;
+	    left[1] = sx*sy*cz + cx*sz;
+	    left[2] = -cx*sy*cz + sx*sz;
+
+	    // determine up axis
+	    up[0] = -cy*sz;
+	    up[1] = -sx*sy*sz + cx*cz;
+	    up[2] = cx*sy*sz + sx*cz;
+
+	    // determine forward axis
+	    forward[0] = sy;
+	    forward[1] = -sx*cy;
+	    forward[2] = cx*cy;
+	}	
+	
 
 }

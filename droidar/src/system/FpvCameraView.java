@@ -95,7 +95,7 @@ public class FpvCameraView extends CameraView implements Runnable {
 		//if(ret!=-1) cameraExists = true;
 		
 		detectingCamera = true;
-		/*
+		
 		Thread detectThread = new Thread() {
             public void run() {
                 int ret = -1;
@@ -129,7 +129,7 @@ public class FpvCameraView extends CameraView implements Runnable {
 		while( detectingCamera ) {
 			
 		}
-		*/
+		
         mainLoop = new Thread(this);
         mainLoop.start();				
 	}

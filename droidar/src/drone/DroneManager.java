@@ -4,7 +4,7 @@ import listeners.DroneListener;
 import events.DroneEvent;
 import events.DroneEvent.Drone;
 
-public class DroneManager implements Runnable {
+public class DroneManager /*implements Runnable*/ {
 	
 	public static DroneManager myInstance;
 	
@@ -20,8 +20,8 @@ public class DroneManager implements Runnable {
 	
 	public DroneManager() {
 		initSerialDrone();
-		mainLoop = new Thread(this);
-		mainLoop.start();
+		//mainLoop = new Thread(this);
+		//mainLoop.start();
 	}
 
 	private void initSerialDrone() {
@@ -41,6 +41,17 @@ public class DroneManager implements Runnable {
 		running = false;
 	}
 	
+	public void setRotationVector( float x, float y, float z ) {
+		event.drone.setType(Drone.TYPE_ROTATION_VECTOR);
+				
+		event.values[0] = x;
+		event.values[1] = y;
+		event.values[2] = z;
+		
+		event.receivedData();
+	}
+		
+	/*
 	private float xStep = (0.68026644f - (-0.5695711f)) / 1000f;
 	private float yStep = (-0.15445209f - (-0.3063118f)) / 1000f;
 	private float zStep = (0.7028675f - (-0.6624234f)) / 1000f;
@@ -65,5 +76,6 @@ public class DroneManager implements Runnable {
 			event.receivedData();
 		}
 	}
+	*/
 
 }

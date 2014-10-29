@@ -63,6 +63,8 @@
             android:name="gui.simpleUI.SimpleUIv1"
             android:theme="@android:style/Theme.Translucent" >
         </activity>
+        
+        <service android:name="telemetry.OPTelemetryService"/>
     </application>
 
     <!--

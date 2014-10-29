@@ -2,4 +2,11 @@
 <resources>
     <string name="app_name">DroidAR</string>
 <string name="errorstring">de.rwth.error</string>
+
+<string name="menu_item_settings">Settings</string>
+<string name="menu_item_connect">Connect</string>
+<string name="menu_item_disconnect">Disconnect</string>
+<string name="txrate">TxRate: </string>
+<string name="rxrate">RxRate: </string>
+	
 </resources>
