@@ -18,7 +18,6 @@
 #include <sys/time.h>
 #include <sys/mman.h>
 #include <sys/ioctl.h>
-#include <sys/select.h>
 
 #include <asm/types.h>          /* for videodev2.h */
 
@@ -82,5 +81,5 @@ void yuyv422toABGRY(unsigned char *src);
 jint Java_system_FpvCameraView_prepareCamera( JNIEnv* env,jobject thiz, jint videoid);
 jint Java_system_FpvCameraView_prepareCameraWithBase( JNIEnv* env,jobject thiz, jint videoid, jint videobase);
 void Java_system_FpvCameraView_processCamera( JNIEnv* env,jobject thiz);
-void Java_system_FpvCameraView_stopCamera( JNIEnv* env,jobject thiz);
+void Java_system_FpvCameraView_stopCamera(JNIEnv* env,jobject thiz);
 void Java_system_FpvCameraView_pixeltobmp( JNIEnv* env,jobject thiz,jobject bitmap);
