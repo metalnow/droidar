@@ -461,6 +461,8 @@ public abstract class ObjectManagerActivity extends Activity {
 				}
 
 			}
+			else
+				binder.openConnection();
 		}
 
 		@Override

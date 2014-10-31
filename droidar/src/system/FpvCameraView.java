@@ -93,7 +93,7 @@ public class FpvCameraView extends CameraView implements Runnable {
 		// /dev/videox (x=cameraId + cameraBase) is used
 		//int ret = prepareCameraWithBase(cameraId, cameraBase);		
 		//if(ret!=-1) cameraExists = true;
-		
+		/*
 		detectingCamera = true;
 		
 		Thread detectThread = new Thread() {
@@ -129,7 +129,7 @@ public class FpvCameraView extends CameraView implements Runnable {
 		while( detectingCamera ) {
 			
 		}
-		
+		*/
         mainLoop = new Thread(this);
         mainLoop.start();				
 	}

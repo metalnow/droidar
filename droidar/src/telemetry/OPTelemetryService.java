@@ -63,11 +63,11 @@ public class OPTelemetryService extends Service {
 	public static boolean WARN = LOGLEVEL > 0;
 
 	// Intent category
-	public final static String INTENT_CATEGORY_GCS        = "org.openpilot.intent.category.GCS";
+	public final static String INTENT_CATEGORY_GCS        = "droidar.intent.category.GCS";
 
 	// Intent actions
-	public final static String INTENT_ACTION_CONNECTED    = "org.openpilot.intent.action.CONNECTED";
-	public final static String INTENT_ACTION_DISCONNECTED = "org.openpilot.intent.action.DISCONNECTED";
+	public final static String INTENT_ACTION_CONNECTED    = "droidar.intent.action.CONNECTED";
+	public final static String INTENT_ACTION_DISCONNECTED = "droidar.intent.action.DISCONNECTED";
 
 	// Variables for local message handler thread
 	private Looper mServiceLooper;
@@ -116,7 +116,7 @@ public class OPTelemetryService extends Service {
 			} catch (NumberFormatException e) {
 				connection_type = 0;
 			}
-
+			connection_type = 4;
 			switch(connection_type) {
 			case 0: // No connection
 				return;
