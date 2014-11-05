@@ -1,7 +1,7 @@
 /**
  ******************************************************************************
  * @file       UAVObject.java
- * @author     The OpenPilot Team, http://www.openpilot.org Copyright (C) 2012.
+ * @author     Tau Labs, http://taulabs.org, Copyright (C) 2012-2013
  * @brief      Base object for UAVDataObject and UAVMetaObject.
  * @see        The GNU Public License (GPL) Version 3
  *
@@ -21,7 +21,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
-package org.openpilot.uavtalk;
+package org.taulabs.uavtalk;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -73,7 +73,7 @@ public abstract class UAVObject {
 			transactionCompletedListeners.deleteObserver(o);
 		}
 	}
-	void transactionCompleted(boolean status) {
+	public void transactionCompleted(boolean status) {
 		synchronized(transactionCompletedListeners) {
 			transactionCompletedListeners.event(new TransactionResult(this,status));
 		}

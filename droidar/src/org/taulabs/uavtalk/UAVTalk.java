@@ -1,7 +1,7 @@
 /**
  ******************************************************************************
  * @file       UAVTalk.java
- * @author     The OpenPilot Team, http://www.openpilot.org Copyright (C) 2012.
+ * @author     Tau Labs, http://taulabs.org, Copyright (C) 2012-2013
  * @brief      The protocol layer implementation of UAVTalk.  Serializes objects
  *             for transmission (which is done in the object itself which is aware
  *             of byte packing) wraps that in the UAVTalk packet.  Parses UAVTalk
@@ -24,7 +24,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
-package org.openpilot.uavtalk;
+package org.taulabs.uavtalk;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -269,16 +269,18 @@ public class UAVTalk {
 	 * it wants to give up on one (after a timeout) then it can cancel it
 	 * @return True if that object was pending, False otherwise
 	 */
-	public synchronized boolean cancelPendingTransaction(UAVObject obj) {
-		if(respObj != null && respObj.getObjID() == obj.getObjID()) {
-			if(transactionListener != null) {
-				Log.d(TAG,"Canceling transaction: " + respObj.getName());
-				transactionListener.TransactionFailed(respObj);
-			}
-			respObj = null;
-			return true;
-		} else
-			return false;
+	public boolean cancelPendingTransaction(UAVObject obj) {
+		synchronized (respObj) {
+			if(respObj != null && respObj.getObjID() == obj.getObjID()) {
+				if(transactionListener != null) {
+					Log.d(TAG,"Canceling transaction: " + respObj.getName());
+					transactionListener.TransactionFailed(respObj);
+				}
+				respObj = null;
+				return true;
+			} else
+				return false;
+		}
 	}
 
 	/**
@@ -296,15 +298,16 @@ public class UAVTalk {
 	/**
 	 * This is the code that sets up a new UAVTalk packet that expects a response.
 	 */
-	private synchronized void setupTransaction(UAVObject obj, boolean allInstances, int type) {
+	private void setupTransaction(UAVObject obj, boolean allInstances, int type) {
+		synchronized (this) {
+			// Only cancel if it is for a different object
+			if(respObj != null && respObj.getObjID() != obj.getObjID())
+				cancelPendingTransaction(obj);
 
-		// Only cancel if it is for a different object
-		if(respObj != null && respObj.getObjID() != obj.getObjID())
-			cancelPendingTransaction(obj);
-
-		respObj = obj;
-		respAllInstances = allInstances;
-		respType = type;
+			respObj = obj;
+			respAllInstances = allInstances;
+			respType = type;
+		}
 	}
 
 	/**
@@ -315,7 +318,7 @@ public class UAVTalk {
 	 * Success (true), Failure (false)
 	 * @throws IOException
 	 */
-	private synchronized boolean objectTransaction(UAVObject obj, int type, boolean allInstances) throws IOException {
+	private boolean objectTransaction(UAVObject obj, int type, boolean allInstances) throws IOException {
 		if (type == TYPE_OBJ_ACK || type == TYPE_OBJ_REQ || type == TYPE_OBJ) {
 			return transmitObject(obj, type, allInstances);
 		} else {
@@ -415,7 +418,7 @@ public class UAVTalk {
 				{
 					UAVObject rxObj = objMngr.getObject(rxObjId);
 					if (rxObj == null) {
-						if (DEBUG) Log.d(TAG, "Unknown ID: " + rxObjId);
+						if (WARN) Log.w(TAG, "Unknown ID: " + rxObjId);
 						stats.rxErrors++;
 						rxState = RxStateType.STATE_SYNC;
 						break;
@@ -429,21 +432,20 @@ public class UAVTalk {
 
 					// Check length and determine next state
 					if (rxLength >= MAX_PAYLOAD_LENGTH) {
+						if (WARN) Log.w(TAG, "Greater than max payload length");
 						stats.rxErrors++;
 						rxState = RxStateType.STATE_SYNC;
 						break;
 					}
 
-					// Check the lengths match
-					if ((rxPacketLength + rxLength) != packetSize) { // packet error
-						// -
-						// mismatched
-						// packet
-						// size
-						stats.rxErrors++;
-						rxState = RxStateType.STATE_SYNC;
-						break;
-					}
+	                // Check the lengths match
+	                if ((rxPacketLength + (rxObj.isSingleInstance() ? 0 : 2) + rxLength) != packetSize)
+	                {   // packet error - mismatched packet size
+	                    if (WARN) Log.w(TAG, "Packet size does not match what it should");
+	                    stats.rxErrors++;
+	                    rxState = RxStateType.STATE_SYNC;
+	                    break;
+	                }
 
 					// Check if this is a single instance object (i.e. if the
 					// instance ID field is coming next)
@@ -503,7 +505,7 @@ public class UAVTalk {
 				rxCSPacket = rxbyte;
 
 				if (rxCS != rxCSPacket) { // packet error - faulty CRC
-					if (DEBUG) Log.d(TAG,"Bad crc");
+					if (WARN) Log.w(TAG,"Bad crc");
 					stats.rxErrors++;
 					rxState = RxStateType.STATE_SYNC;
 					break;
@@ -512,7 +514,7 @@ public class UAVTalk {
 				if (rxPacketLength != (packetSize + 1)) { // packet error -
 					// mismatched packet
 					// size
-					if (DEBUG) Log.d(TAG,"Bad size");
+					if (WARN) Log.w(TAG,"Bad size");
 					stats.rxErrors++;
 					rxState = RxStateType.STATE_SYNC;
 					break;
@@ -529,6 +531,7 @@ public class UAVTalk {
 				break;
 
 			default:
+				if (WARN) Log.w(TAG, "Bad state");
 				rxState = RxStateType.STATE_SYNC;
 				stats.rxErrors++;
 			}
@@ -701,21 +704,30 @@ public class UAVTalk {
 	 * Called when an object is received to check if this completes
 	 * a UAVTalk transaction
 	 */
-	private synchronized void updateObjReq(UAVObject obj) {
+	private void updateObjReq(UAVObject obj) {
 		// Check if this is not a possible candidate
 		Assert.assertNotNull(obj);
 
-		if(respObj != null && respType == TYPE_OBJ_REQ && respObj.getObjID() == obj.getObjID() &&
-				((respObj.getInstID() == obj.getInstID() || !respAllInstances))) {
+		boolean succeeded = false;
 
-			// Indicate complete
-			respObj = null;
+		// The lock on UAVTalk must be release before the transaction succeeded signal is sent
+		// because otherwise if a transaction timeout occurs at the same time we can get a
+		// deadlock:
+		// 1. processInputStream -> updateObjReq (locks uavtalk) -> tranactionCompleted (locks transInfo)
+		// 2. transactionTimeout (locks transInfo) -> sendObjectRequest -> ? -> setupTransaction (locks uavtalk)
+		synchronized(this) {
+			if(respObj != null && respType == TYPE_OBJ_REQ && respObj.getObjID() == obj.getObjID() &&
+					((respObj.getInstID() == obj.getInstID() || !respAllInstances))) {
 
-			// Notify listener
-			if (transactionListener != null)
-				transactionListener.TransactionSucceeded(obj);
+				// Indicate complete
+				respObj = null;
+				succeeded = true;
+			}
 		}
 
+		// Notify listener
+		if (succeeded && transactionListener != null)
+				transactionListener.TransactionSucceeded(obj);
 	}
 
 	/**
@@ -904,11 +916,11 @@ public class UAVTalk {
 	}
 
 	private OnTransactionCompletedListener transactionListener = null;
-	abstract class OnTransactionCompletedListener {
-    	abstract void TransactionSucceeded(UAVObject data);
-    	abstract void TransactionFailed(UAVObject data);
+	public abstract class OnTransactionCompletedListener {
+    	public abstract void TransactionSucceeded(UAVObject data);
+    	public abstract void TransactionFailed(UAVObject data);
     };
-    void setOnTransactionCompletedListener(OnTransactionCompletedListener onTransactionListener) {
+    public void setOnTransactionCompletedListener(OnTransactionCompletedListener onTransactionListener) {
     	this.transactionListener = onTransactionListener;
     }
 

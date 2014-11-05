@@ -1,7 +1,7 @@
 /**
  ******************************************************************************
  * @file       BluetoothUAVTalk.java
- * @author     The OpenPilot Team, http://www.openpilot.org Copyright (C) 2012.
+ * @author     Tau Labs, http://taulabs.org, Copyright (C) 2012-2013
  * @brief      Telemetry over bluetooth.
  * @see        The GNU Public License (GPL) Version 3
  *
@@ -55,7 +55,7 @@ public class BluetoothUAVTalk extends TelemetryTask {
 	private BluetoothSocket socket;
 	private BluetoothDevice device;
 
-	public BluetoothUAVTalk(OPTelemetryService caller) {
+	public BluetoothUAVTalk(TelemetryService caller) {
 		super(caller);
 	}
 
@@ -143,7 +143,7 @@ public class BluetoothUAVTalk extends TelemetryTask {
 		socket = null;
 
 		try {
-			socket = device.createInsecureRfcommSocketToServiceRecord(MY_UUID);
+			socket = device.createRfcommSocketToServiceRecord(MY_UUID);
 		} catch (IOException e) {
 			if (ERROR) Log.e(TAG,"Unable to create Rfcomm socket");
 			return false;

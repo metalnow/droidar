@@ -1,7 +1,7 @@
 /**
  ******************************************************************************
  * @file       TelemetryMonitor.java
- * @author     The OpenPilot Team, http://www.openpilot.org Copyright (C) 2012.
+ * @author     Tau Labs, http://taulabs.org, Copyright (C) 2012-2013
  * @brief      High level monitoring of telemetry to handle connection and
  *             disconnection and then signal the rest of the application.
  *             This also makes sure to fetch all objects on initial connection.
@@ -23,7 +23,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
-package org.openpilot.uavtalk;
+package telemetry;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -34,7 +34,11 @@ import java.util.Observer;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import telemetry.OPTelemetryService;
+import org.taulabs.uavtalk.UAVDataObject;
+import org.taulabs.uavtalk.UAVObject;
+import org.taulabs.uavtalk.UAVObject.TransactionResult;
+import org.taulabs.uavtalk.UAVObjectField;
+import org.taulabs.uavtalk.UAVObjectManager;
 
 import android.util.Log;
 
@@ -54,17 +58,22 @@ public class TelemetryMonitor extends Observable {
 
 	private final UAVObjectManager objMngr;
 	private final Telemetry tel;
+
+	private boolean objectsRegistered;
 	// private UAVObject objPending;
 	private UAVObject gcsStatsObj;
 	private UAVObject flightStatsObj;
+	private final UAVObject firmwareIapObj;
 	private Timer periodicTask;
 	private int currentPeriod;
 	private long lastUpdateTime;
 	private final List<UAVObject> queue;
 
-	private OPTelemetryService telemService;
+	private TelemetryService telemService;
 	private boolean connected = false;
 	private boolean objects_updated = false;
+
+	private int gcsTransactionFailCount = 0;
 
 	public boolean getConnected() {
 		return connected;
@@ -74,7 +83,8 @@ public class TelemetryMonitor extends Observable {
 		return objects_updated;
 	};
 
-	public TelemetryMonitor(UAVObjectManager objMngr, Telemetry tel, OPTelemetryService s) {
+	public TelemetryMonitor(UAVObjectManager objMngr, Telemetry tel,
+			TelemetryService s) {
 		this(objMngr, tel);
 		telemService = s;
 	}
@@ -85,9 +95,30 @@ public class TelemetryMonitor extends Observable {
 		// this.objPending = null;
 		queue = new ArrayList<UAVObject>();
 
+		objectsRegistered = false;
+
 		// Get stats objects
 		gcsStatsObj = objMngr.getObject("GCSTelemetryStats");
 		flightStatsObj = objMngr.getObject("FlightTelemetryStats");
+		firmwareIapObj = objMngr.getObject("FirmwareIAPObj");
+
+		// The first update of the firmwareIapObj will trigger registering the objects
+		firmwareIapObj.addUpdatedObserver(firmwareIapUpdated);
+
+		firmwareIapObj.addTransactionCompleted(new Observer() {
+			@Override
+			public void update(Observable observable, Object data) {
+				TransactionResult transaction = (TransactionResult) data;
+				if (transaction != null) {
+					if (transaction.success == false) {
+						if (DEBUG) Log.d(TAG, "Firmware IAP transaction failed.  Retrying");
+						firmwareIapObj.updateRequested();
+					} else {
+						if (DEBUG) Log.d(TAG, "Firmware IAP transaction Succeeded");
+					}
+				}
+			}
+		});
 
 		flightStatsObj.addUpdatedObserver(new Observer() {
 			@Override
@@ -102,6 +133,20 @@ public class TelemetryMonitor extends Observable {
 					flightStatsObj.removeUpdatedObserver(this);
 				}
 			}
+		});
+
+		gcsStatsObj.addTransactionCompleted(new Observer() {
+
+			@Override
+			public void update(Observable observable, Object data) {
+				TransactionResult result = (TransactionResult) data;
+				if (DEBUG) Log.d(TAG, "Result: " + result.success + " count " + gcsTransactionFailCount);
+				if (result.success)
+					gcsTransactionFailCount = 0;
+				else
+					gcsTransactionFailCount = gcsTransactionFailCount + 1;
+			}
+
 		});
 
 		// Start update timer
@@ -339,13 +384,28 @@ public class TelemetryMonitor extends Observable {
 			}
 		}
 
-		// Force telemetry update if not yet connected
-		boolean gcsStatusChanged = !oldStatus.equals(statusField.getValue());
-
 		boolean gcsConnected = statusField.getValue().equals("Connected");
 		boolean gcsDisconnected = statusField.getValue().equals("Disconnected");
-		boolean flightConnected = flightStatsObj.getField("Status").equals(
-				"Connected");
+		boolean flightConnected = flightStatsObj.getField("Status").getValue()
+				.equals("Connected");
+
+		if (flightConnected && !gcsConnected && (gcsTransactionFailCount >= 3)) {
+			Log.d(TAG, "GCS was not connected but flight is.  GCS status: "
+					+ statusField.getValue());
+			// For the case of telemetry pass through in we force the local
+			// connection to be true.  We detect this because attempts to set
+			// GCSTelemetryStatus to handshake requested fail multiple times
+			// and the flight controller thinks a connection is already
+			// estabilished
+
+			statusField.setValue("Connected");
+			gcsStatsObj.updated();
+			gcsConnected = true;
+			gcsDisconnected = false;
+		}
+
+		// Force telemetry update if not yet connected
+		boolean gcsStatusChanged = !oldStatus.equals(statusField.getValue());
 
 		if (!gcsConnected || !flightConnected) {
 			if (DEBUG)
@@ -360,8 +420,13 @@ public class TelemetryMonitor extends Observable {
 			setPeriod(STATS_UPDATE_PERIOD_MS);
 			connected = true;
 			objects_updated = false;
-			startRetrievingObjects();
-			if (HANDSHAKE_IS_CONNECTED) setChanged(); // Enabling this line makes the opConnected signal occur whenever we get a handshake
+			if (objectsRegistered)
+				startRetrievingObjects();
+			else
+				firmwareIapObj.updateRequested();
+			if (HANDSHAKE_IS_CONNECTED)
+				setChanged(); // Enabling this line makes the opConnected signal
+								// occur whenever we get a handshake
 		}
 		if (gcsDisconnected && gcsStatusChanged) {
 			if (DEBUG)
@@ -404,5 +469,38 @@ public class TelemetryMonitor extends Observable {
 		periodicTask.cancel();
 		periodicTask = null;
 	}
+
+	private final Observer firmwareIapUpdated = new Observer() {
+		@Override
+		public void update(Observable observable, Object data) {
+			if (DEBUG) Log.d(TAG, "Received firmware IAP Updated message");
+
+			UAVObjectField description = firmwareIapObj.getField("Description");
+			if (description == null || description.getNumElements() < 100) {
+				telemService.toastMessage("Failed to determine UAVO set");
+			} else {
+				final int HASH_SIZE_USED = 8;
+				String jarName = new String();
+				for (int i = 0; i < HASH_SIZE_USED; i++) {
+					jarName += String.format("%02x", (int) description.getDouble(i + 60));
+				}
+				jarName += ".jar";
+				if (DEBUG) Log.d(TAG, "Attempting to load: " + jarName);
+				if (telemService.loadUavobjects(jarName, objMngr)) {
+					telemService.toastMessage("Loaded appropriate UAVO set");
+					objectsRegistered = true;
+					try {
+						startRetrievingObjects();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				} else
+					telemService.toastMessage("Failed to load UAVO set: " + jarName);
+			}
+
+			firmwareIapObj.removeUpdatedObserver(this);
+		}
+	};
 
 }

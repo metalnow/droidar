@@ -1,3 +1,26 @@
+/**
+ ******************************************************************************
+ * @file       TelemetryTask.java
+ * @author     Tau Labs, http://taulabs.org, Copyright (C) 2012-2013
+ * @brief      The base class for all telemetry link layer implementations
+ * @see        The GNU Public License (GPL) Version 3
+ *
+ *****************************************************************************/
+/*
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+ * for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ */
 package telemetry;
 
 import java.io.IOException;
@@ -6,13 +29,12 @@ import java.io.OutputStream;
 import java.util.Observable;
 import java.util.Observer;
 
-import org.openpilot.uavtalk.Telemetry;
-import org.openpilot.uavtalk.TelemetryMonitor;
-import org.openpilot.uavtalk.UAVObject;
-import org.openpilot.uavtalk.UAVObjectField;
-import org.openpilot.uavtalk.UAVObjectManager;
-import org.openpilot.uavtalk.UAVTalk;
-import org.openpilot.uavtalk.uavobjects.TelemObjectsInitialize;
+import telemetry.tasks.AudioTask;
+import telemetry.tasks.LoggingTask;
+import telemetry.tasks.TabletInformation;
+import org.taulabs.uavtalk.UAVObjectManager;
+import org.taulabs.uavtalk.UAVTalk;
+import org.taulabs.uavtalk.uavobjects.TelemObjectsInitialize;
 
 import android.content.Intent;
 import android.os.Handler;
@@ -23,9 +45,10 @@ public abstract class TelemetryTask implements Runnable {
 
 	// Logging settings
 	private final String TAG = TelemetryTask.class.getSimpleName();
-	public static final int LOGLEVEL = 2;
-	public static final boolean WARN = LOGLEVEL > 1;
-	public static final boolean DEBUG = LOGLEVEL > 0;
+	public static final int LOGLEVEL = 1;
+	public static final boolean WARN = LOGLEVEL > 2;
+	public static final boolean DEBUG = LOGLEVEL > 1;
+	public static final boolean ERROR = LOGLEVEL > 0;
 
 	/*
 	 * This is a self contained runnable that will establish (if possible)
@@ -50,7 +73,7 @@ public abstract class TelemetryTask implements Runnable {
 	protected Handler handler;
 
 	//! Handle to the parent service
-	protected final OPTelemetryService telemService;
+	protected final TelemetryService telemService;
 
 	//! The object manager that will be used for this telemetry task
 	protected UAVObjectManager objMngr;
@@ -79,7 +102,19 @@ public abstract class TelemetryTask implements Runnable {
 	//! Indicate a physical connection is established
 	private boolean connected;
 
-	TelemetryTask(OPTelemetryService s) {
+	//! Check if the looper is still running
+	private boolean looperRunning = false;
+
+	//! An object which can log the telemetry stream
+	private final LoggingTask logger = new LoggingTask();
+
+	//! Background process to update the TabletInformation object
+	private final TabletInformation tabletInfoTask = new TabletInformation();
+
+	//! Generate audio alerts based on object updates
+	private final AudioTask audioTask = new AudioTask();
+
+	TelemetryTask(TelemetryService s) {
 		telemService = s;
 		shutdown = false;
 		connected = false;
@@ -93,32 +128,6 @@ public abstract class TelemetryTask implements Runnable {
 	 */
 	abstract boolean attemptConnection();
 
-	private final Observer firmwareIapUpdated = new Observer() {
-		@Override
-		public void update(Observable observable, Object data) {
-			if (DEBUG) Log.d(TAG, "Received firmware IAP Updated message");
-
-			UAVObject obj = objMngr.getObject("FirmwareIAPObj");
-			UAVObjectField description = obj.getField("Description");
-			if(description == null || description.getNumElements() < 100) {
-				telemService.toastMessage("Failed to determine UAVO set");
-			} else {
-				final int HASH_SIZE_USED = 8;
-				String jarName = new String();
-				for(int i = 0; i < HASH_SIZE_USED; i++)
-					jarName += Integer.toHexString((int) description.getDouble(i+60));
-				jarName += ".jar";
-				if (DEBUG) Log.d(TAG, "Attempting to load: " + jarName);
-				if (telemService.loadUavobjects(jarName, objMngr) ) {
-					telemService.toastMessage("Loaded appropriate UAVO set");
-				} else
-					telemService.toastMessage("Failed to determine UAVO set");
-			}
-
-			obj.removeUpdatedObserver(this);
-		}
-	};
-
 	/**
 	 * Called when a physical channel is opened
 	 *
@@ -126,6 +135,11 @@ public abstract class TelemetryTask implements Runnable {
 	 * created a valid inStream and outStream
 	 */
 	boolean attemptSucceeded() {
+
+		Intent intent = new Intent();
+		intent.setAction(TelemetryService.INTENT_CHANNEL_OPENED);
+		telemService.sendBroadcast(intent,null);
+
 		// Create a new object manager and register all objects
 		// in the future the particular register method should
 		// be dependent on what is connected (e.g. board and
@@ -133,15 +147,10 @@ public abstract class TelemetryTask implements Runnable {
 		objMngr = new UAVObjectManager();
 		TelemObjectsInitialize.register(objMngr);
 
-		// Register to get an update from FirmwareIAP in order to register
-		// the appropriate objects
-		UAVObject obj = objMngr.getObject("FirmwareIAPObj");
-		obj.addUpdatedObserver(firmwareIapUpdated);
-
 		// Create the required telemetry objects attached to this
 		// data stream
 		uavTalk = new UAVTalk(inStream, outStream, objMngr);
-		tel = new Telemetry(uavTalk, objMngr, Looper.myLooper());
+		tel = new Telemetry(uavTalk, objMngr, Looper.myLooper(), telemetryFailureRunnable);
 		mon = new TelemetryMonitor(objMngr,tel, telemService);
 
 		// Create an observer to notify system of connection
@@ -150,18 +159,33 @@ public abstract class TelemetryTask implements Runnable {
 		// Create a new thread that processes the input bytes
 		startInputProcessing();
 
+		// Connect the tablet information task
+		tabletInfoTask.connect(objMngr, telemService);
+
+		// Connect the logger
+		logger.connect(objMngr, telemService);
+
+		// Connect the audio alerts
+		audioTask.connect(objMngr, telemService);
+
 		connected = true;
 		return connected;
 	}
 
 	boolean attemptedFailed() {
 		connected = false;
+		telemService.connectionBroken();
 		return connected;
 	}
 
 	void disconnect() {
 		// Make the default input procesing loop stop
 		shutdown = true;
+
+		// Stop updating the tablet information
+		tabletInfoTask.disconnect();
+		logger.disconnect();
+		audioTask.disconnect();
 
 		// Shut down all the attached
 		if (mon != null) {
@@ -174,13 +198,15 @@ public abstract class TelemetryTask implements Runnable {
 			tel = null;
 		}
 
-		// Stop the master telemetry thread
-		handler.post(new Runnable() {
-			@Override
-			public void run() {
-				Looper.myLooper().quit();
-			}
-		});
+		// Stop the master telemetry thread if the looper is still running
+		if (looperRunning) {
+			handler.post(new Runnable() {
+				@Override
+				public void run() {
+					Looper.myLooper().quit();
+				}
+			});
+		}
 
 		if (inputProcessThread != null) {
 			inputProcessThread.interrupt();
@@ -193,6 +219,8 @@ public abstract class TelemetryTask implements Runnable {
 		// TODO: Make sure the input and output stream is closed
 
 		// TODO: Make sure any threads for input and output are closed
+
+		connected = false;
 	}
 
 	/**
@@ -217,6 +245,7 @@ public abstract class TelemetryTask implements Runnable {
 				} catch (IOException e) {
 					e.printStackTrace();
 					telemService.toastMessage("Telemetry input stream interrupted");
+					telemService.connectionBroken();
 					break;
 				}
 			}
@@ -224,24 +253,36 @@ public abstract class TelemetryTask implements Runnable {
 		}
 	};
 
+	//! Accessor to get the logging task
+	public final LoggingTask getLoggingTask() {
+		return logger;
+	}
+
 	@Override
 	public void run() {
-		try {
+		looperRunning = true;
 
-			Looper.prepare();
-			handler = new Handler();
+		Looper.prepare();
+		handler = new Handler();
 
-			if (DEBUG) Log.d(TAG, "Attempting connection");
-			if( attemptConnection() == false )
-				return; // Attempt failed
-
-			Looper.loop();
-
-			if (DEBUG) Log.d(TAG, "TelemetryTask runnable finished");
-
-		} catch (Throwable t) {
-			Log.e(TAG, "halted due to an error", t);
+		if (DEBUG) Log.d(TAG, "Attempting connection");
+		if( attemptConnection() == false ) {
+			if (ERROR) Log.e(TAG, "run() called when no valid connection found");
+			return; // Attempt failed
 		}
+
+		Looper.loop();
+
+		looperRunning = false;
+
+		if (!shutdown) {
+			// The looper ended without a requested shutdown indicating a link
+			// error.  Terminate the rest of telemetry.
+			if (DEBUG) Log.d(TAG, "Link failure detected");
+			disconnect();
+		}
+
+		if (DEBUG) Log.d(TAG, "TelemetryTask runnable finished");
 
 		telemService.toastMessage("Telemetry Thread finished");
 	}
@@ -252,9 +293,24 @@ public abstract class TelemetryTask implements Runnable {
 			if (DEBUG) Log.d(TAG, "Mon updated. Connected: " + mon.getConnected() + " objects updated: " + mon.getObjectsUpdated());
 			if(mon.getConnected()) {
 				Intent intent = new Intent();
-				intent.setAction(OPTelemetryService.INTENT_ACTION_CONNECTED);
+				intent.setAction(TelemetryService.INTENT_ACTION_CONNECTED);
 				telemService.sendBroadcast(intent,null);
 			}
+		}
+	};
+
+	/**
+	 *  Posted by telemetry when there is a connection failure on writing
+	 *  This is because telemetry doesn't (and shouldn't) have a handle to
+	 *  the telemetry task to trigger the disconnection when a write
+	 *  failure occurs.
+	 */
+	private final Runnable telemetryFailureRunnable = new Runnable() {
+		@Override
+		public void run() {
+			Log.d(TAG, "Telemetry failure runnable called");
+			disconnect();
+			telemService.connectionBroken();
 		}
 	};
 
@@ -268,13 +324,19 @@ public abstract class TelemetryTask implements Runnable {
 		return uavTalk;
 	}
 
-	public OPTelemetryService.TelemTask getTelemTaskIface() {
-		return new OPTelemetryService.TelemTask() {
+	public TelemetryService.TelemTask getTelemTaskIface() {
+		return new TelemetryService.TelemTask() {
 			@Override
 			public UAVObjectManager getObjectManager() {
 				return objMngr;
 			}
+
+			@Override
+			public LoggingTask getLoggingTask() {
+				return logger;
+			}
 		};
+
 	}
 
 }

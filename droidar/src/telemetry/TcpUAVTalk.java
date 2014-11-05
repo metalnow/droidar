@@ -1,7 +1,7 @@
 /**
  ******************************************************************************
  * @file       TcpUAVTalk.java
- * @author     The OpenPilot Team, http://www.openpilot.org Copyright (C) 2012.
+ * @author     Tau Labs, http://taulabs.org, Copyright (C) 2012-2013
  * @brief      UAVTalk over TCP.
  * @see        The GNU Public License (GPL) Version 3
  *
@@ -48,7 +48,7 @@ public class TcpUAVTalk extends TelemetryTask {
 	 * Construct a TcpUAVTalk object attached to the OPTelemetryService.  Gets the
 	 * connection settings from the preferences.
 	 */
-	public TcpUAVTalk(OPTelemetryService caller) {
+	public TcpUAVTalk(TelemetryService caller) {
 		super(caller);
 	}
 

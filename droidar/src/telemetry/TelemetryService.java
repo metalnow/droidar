@@ -1,7 +1,7 @@
 /**
  ******************************************************************************
  * @file       OPTelemetryService.java
- * @author     The OpenPilot Team, http://www.openpilot.org Copyright (C) 2012.
+ * @author     Tau Labs, http://taulabs.org, Copyright (C) 2012-2013
  * @brief      Provides UAVTalk telemetry over multiple physical links.  The
  *             details of each of these are in their respective connection
  *             classes.  This mostly creates those threads based on the selected
@@ -35,7 +35,8 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import org.openpilot.uavtalk.UAVObjectManager;
+import telemetry.tasks.LoggingTask;
+import org.taulabs.uavtalk.UAVObjectManager;
 
 import android.app.Service;
 import android.content.Context;
@@ -54,30 +55,44 @@ import android.util.Log;
 import android.widget.Toast;
 import dalvik.system.DexClassLoader;
 
-public class OPTelemetryService extends Service {
+public class TelemetryService extends Service {
 
 	// Logging settings
-	private final String TAG = OPTelemetryService.class.getSimpleName();
+	private final String TAG = TelemetryService.class.getSimpleName();
 	public static int LOGLEVEL = 2;
 	public static boolean DEBUG = LOGLEVEL > 1;
 	public static boolean WARN = LOGLEVEL > 0;
 
 	// Intent category
-	public final static String INTENT_CATEGORY_GCS        = "droidar.intent.category.GCS";
+	public final static String INTENT_CATEGORY_GCS        = "org.taulabs.intent.category.GCS";
 
 	// Intent actions
-	public final static String INTENT_ACTION_CONNECTED    = "droidar.intent.action.CONNECTED";
-	public final static String INTENT_ACTION_DISCONNECTED = "droidar.intent.action.DISCONNECTED";
+	public final static String INTENT_CHANNEL_OPENED      = "org.taulabs.intent.action.CHANNEL_OPENED";
+	public final static String INTENT_ACTION_CONNECTED    = "org.taulabs.intent.action.CONNECTED";
+	public final static String INTENT_ACTION_DISCONNECTED = "org.taulabs.intent.action.DISCONNECTED";
 
 	// Variables for local message handler thread
 	private Looper mServiceLooper;
 	private ServiceHandler mServiceHandler;
 	private static HandlerThread thread;
 
+	//! States for connectivity
+	public enum ConnectionState {
+		//! Telemetry is idle
+		DISCONNECTED,
+		//! Attempting to open a physical channel
+		OPENING,
+		//! Channel is opening, attempting to establish link
+		CONNECTING,
+		//! Telemetry connected and running
+		CONNECTED
+	};
+
 	// Message ids
 	static final int MSG_START        = 0;
 	static final int MSG_CONNECT      = 1;
 	static final int MSG_DISCONNECT   = 3;
+	static final int MSG_CON_BROKEN   = 4;
 	static final int MSG_TOAST        = 100;
 
 	private Thread activeTelem;
@@ -86,17 +101,17 @@ public class OPTelemetryService extends Service {
 	private final IBinder mBinder = new LocalBinder();
 
 	static class ServiceHandler extends Handler {
-	    private final WeakReference<OPTelemetryService> mService;
+	    private final WeakReference<TelemetryService> mService;
 
-	    ServiceHandler(OPTelemetryService service, Looper looper) {
+	    ServiceHandler(TelemetryService service, Looper looper) {
 	    	super(looper);
-	        mService = new WeakReference<OPTelemetryService>(service);
+	        mService = new WeakReference<TelemetryService>(service);
 	    }
 
 	    @Override
 	    public void handleMessage(Message msg)
 	    {
-	    	OPTelemetryService service = mService.get();
+	    	TelemetryService service = mService.get();
 	         if (service != null) {
 	              service.handleMessage(msg);
 	         }
@@ -109,8 +124,19 @@ public class OPTelemetryService extends Service {
 			stopSelf(msg.arg2);
 			break;
 		case MSG_CONNECT:
+			// Check we are not connected
+			if (telemTask != null && telemTask.getConnected() == false) {
+				// Previous connection task handle still around but connection must have failed
+				// TODO: verify this isn't during connection attempt;
+				telemTask = null;
+			} else if (telemTask != null) {
+				Toast.makeText(getApplicationContext(), "Connection already exists.  Disconnect first.", Toast.LENGTH_SHORT).show();
+				if (DEBUG) Log.d(TAG, "Attempted to connect while already connected");
+				return;
+			}
+
 			int connection_type;
-			SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(OPTelemetryService.this);
+			SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(TelemetryService.this);
 			try {
 				connection_type = Integer.decode(prefs.getString("connection_type", ""));
 			} catch (NumberFormatException e) {
@@ -135,12 +161,31 @@ public class OPTelemetryService extends Service {
 				telemTask = new HidUAVTalk(this);
 				activeTelem = new Thread(telemTask, "Hid telemetry thread");
 				break;
+			case 5:
+				Toast.makeText(getApplicationContext(), "Attempting serial connection", Toast.LENGTH_SHORT).show();
+				telemTask = new SerialUAVTalk(this);
+				activeTelem = new Thread(telemTask, "Serial telemetry thread");
+				break;
 			default:
 				throw new Error("Unsupported");
 			}
 			activeTelem.start();
 			break;
 		case MSG_DISCONNECT:
+			// Check we are connected
+			if (telemTask == null) {
+				Toast.makeText(getApplicationContext(), "Not connected", Toast.LENGTH_SHORT).show();
+				if (DEBUG) Log.d(TAG, "Attempted to disconnect while not connected");
+				return;
+			}
+
+			// Telemetry not connected due to a connection failure
+			if (telemTask != null && telemTask.getConnected() == false) {
+				if (DEBUG) Log.d(TAG, "Connection appears to have disconnected.  Clearing the task");
+				// TODO: Verify that this is not done while actively connecting
+				telemTask = null;
+			}
+
 			Toast.makeText(getApplicationContext(), "Disconnect requested", Toast.LENGTH_SHORT).show();
 			if (DEBUG) Log.d(TAG, "Calling disconnect");
 			if (telemTask != null) {
@@ -170,6 +215,44 @@ public class OPTelemetryService extends Service {
 			stopSelf();
 
 			break;
+		case MSG_CON_BROKEN:
+			// Check we are connected
+			if (telemTask == null) {
+				Toast.makeText(getApplicationContext(), "Not connected", Toast.LENGTH_SHORT).show();
+				if (DEBUG) Log.d(TAG, "Attempted to disconnect while not connected");
+				return;
+			}
+
+			Toast.makeText(getApplicationContext(), "Connection broken", Toast.LENGTH_SHORT).show();
+
+			if (DEBUG) Log.d(TAG, "Calling disconnect because of broken connection");
+			if (telemTask != null) {
+				telemTask.disconnect();
+				telemTask = null;
+
+				try {
+					activeTelem.join();
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+			else  if (activeTelem != null) {
+				activeTelem.interrupt();
+				try {
+					activeTelem.join();
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+				activeTelem = null;
+			}
+			if (DEBUG) Log.d(TAG, "Telemetry thread terminated");
+			Intent brokenIntent = new Intent();
+			brokenIntent.setAction(INTENT_ACTION_DISCONNECTED);
+			sendBroadcast(brokenIntent,null);
+
+			stopSelf();
+
+			break;
 		case MSG_TOAST:
 			Toast.makeText(this, (String) msg.obj, Toast.LENGTH_SHORT).show();
 			break;
@@ -184,7 +267,7 @@ public class OPTelemetryService extends Service {
 	 * and based on the stored preference will send itself a connect signal if needed.
 	 */
 	public void startup() {
-		Toast.makeText(getApplicationContext(), "Telemetry service starting", Toast.LENGTH_SHORT).show();
+		if (DEBUG) Log.d(TAG, "Telemetry service starting");
 
 		thread = new HandlerThread("TelemetryServiceHandler", Process.THREAD_PRIORITY_BACKGROUND);
 		thread.start();
@@ -193,7 +276,7 @@ public class OPTelemetryService extends Service {
 		mServiceLooper = thread.getLooper();
 		mServiceHandler = new ServiceHandler(this, mServiceLooper);
 
-		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(OPTelemetryService.this);
+		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(TelemetryService.this);
 		if(prefs.getBoolean("autoconnect", false)) {
 			Message msg = mServiceHandler.obtainMessage();
 			msg.arg1 = MSG_CONNECT;
@@ -227,7 +310,7 @@ public class OPTelemetryService extends Service {
 	public void onDestroy() {
 
 		if (telemTask != null) {
-			Log.d(TAG, "onDestroy() shutting down telemetry task");
+			if (DEBUG) Log.d(TAG, "onDestroy() shutting down telemetry task");
 			telemTask.disconnect();
 			telemTask = null;
 
@@ -237,8 +320,12 @@ public class OPTelemetryService extends Service {
 				e.printStackTrace();
 			}
 		}
-		Log.d(TAG, "onDestory() shut down telemetry task");
-		Toast.makeText(this, "Telemetry service done", Toast.LENGTH_SHORT).show();
+		if (DEBUG) Log.d(TAG, "onDestory() shut down telemetry task");
+	}
+
+	public ConnectionState getConnectionState()
+	{
+		return ConnectionState.DISCONNECTED;
 	}
 
 	public class LocalBinder extends Binder {
@@ -248,7 +335,6 @@ public class OPTelemetryService extends Service {
 			return null;
 		}
 		public void openConnection() {
-			Toast.makeText(getApplicationContext(), "Requested open connection", Toast.LENGTH_SHORT).show();
 			Message msg = mServiceHandler.obtainMessage();
 			msg.arg1 = MSG_CONNECT;
 			mServiceHandler.sendMessage(msg);
@@ -261,7 +347,25 @@ public class OPTelemetryService extends Service {
 		public boolean isConnected() {
 			return (activeTelem != null) && (telemTask != null) && (telemTask.getConnected());
 		}
+		/**
+		 * Query the telemetry service for the current connection state
+		 * @return @ref ConnectionState of the current state
+		 */
+		public ConnectionState getConnectionState() {
+			if (telemTask != null) {
+				if (telemTask.getConnected())
+					return ConnectionState.CONNECTED;
+				return ConnectionState.OPENING;
+			}
+			return ConnectionState.DISCONNECTED;
+		}
 	};
+
+	public void connectionBroken() {
+		Message msg = mServiceHandler.obtainMessage();
+		msg.arg1 = MSG_CON_BROKEN;
+		mServiceHandler.sendMessage(msg);
+	}
 
 	public void toastMessage(String msgText) {
 		Message msg = mServiceHandler.obtainMessage();
@@ -275,6 +379,7 @@ public class OPTelemetryService extends Service {
 	 */
 	public interface TelemTask {
 		public UAVObjectManager getObjectManager();
+		public LoggingTask getLoggingTask();
 	};
 
 
@@ -294,6 +399,7 @@ public class OPTelemetryService extends Service {
             numRead = inputStream.read(buffer);
         }
     }
+
 	private void copyAssets(String JAR_DIR, String JAR_NAME)
     {
         File jarsDir = getDir(JAR_DIR, MODE_WORLD_READABLE);
@@ -320,6 +426,19 @@ public class OPTelemetryService extends Service {
         catch (IOException e)
         {
             Log.e(TAG, e.toString(), e);
+            String[] list;
+			try {
+				list = assetManager.list("uavos/");
+				Log.i(TAG, "Listing found uavos");
+	            for(int i = 0; i < list.length; i++) {
+	            	Log.i(TAG, "Found: " + list[i]);
+	            }
+
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+
         }
     }
 
@@ -351,6 +470,10 @@ public class OPTelemetryService extends Service {
 	    final String JAR_DIR = "jars";
 	    final String DEX_DIR = "optimized_dex";
 
+	    File jarsDir = getDir(JAR_DIR, MODE_WORLD_READABLE);
+	    if (jarsDir.exists())
+	    	deleteDirectoryContents(jarsDir);
+
 	    copyAssets(JAR_DIR, jar);
 
 		Log.d(TAG, "Starting dex loader");
@@ -360,13 +483,12 @@ public class OPTelemetryService extends Service {
 		if (dexDir.exists())
 			deleteDirectoryContents(dexDir);
 
-		File jarsDir = getDir(JAR_DIR, MODE_WORLD_READABLE);
 		String classpath = new File(jarsDir, jar).getAbsolutePath();
 
 		DexClassLoader loader = new DexClassLoader(classpath, dexDir.getAbsolutePath(), null, getClassLoader());
 
 		try {
-			Class<?> initClass = loader.loadClass("org.openpilot.uavtalk.uavobjects.UAVObjectsInitialize");
+			Class<?> initClass = loader.loadClass("org.taulabs.uavtalk.uavobjects.UAVObjectsInitialize");
 			Method initMethod = initClass.getMethod("register", UAVObjectManager.class);
 			initMethod.invoke(null, objMngr);
 		} catch (ClassNotFoundException e1) {

@@ -1,12 +1,8 @@
 /**
  ******************************************************************************
- *
- *
- * @file       uavobjectsinittemplate.java
- * @author     The OpenPilot Team, http://www.openpilot.org Copyright (C) 2010.
- * @brief      the template for the uavobjects init part
- *             $(GENERATEDWARNING)
- *
+ * @file       ITelemTask.java
+ * @author     Tau Labs, http://taulabs.org, Copyright (C) 2012-2013
+ * @brief      Interface for tasks that are run by telemetry
  * @see        The GNU Public License (GPL) Version 3
  *
  *****************************************************************************/
@@ -25,20 +21,13 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
+package telemetry.tasks;
 
-package org.openpilot.uavtalk.uavobjects;
+import org.taulabs.uavtalk.UAVObjectManager;
 
-import org.openpilot.uavtalk.UAVObjectManager;
+import android.content.Context;
 
-public class TelemObjectsInitialize {
-	
-	public static void register(UAVObjectManager objMngr) {
-		try {
-			objMngr.registerObject( new FirmwareIAPObj() );
-			objMngr.registerObject( new FlightTelemetryStats() );
-			objMngr.registerObject( new GCSTelemetryStats() );
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+public interface ITelemTask {
+	public void connect(UAVObjectManager objMngr, Context context);
+	public void disconnect();
 }

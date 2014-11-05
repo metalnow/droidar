@@ -1,7 +1,7 @@
 /**
  ******************************************************************************
  * @file       UAVObjectManager.java
- * @author     The OpenPilot Team, http://www.openpilot.org Copyright (C) 2012.
+ * @author     Tau Labs, http://taulabs.org, Copyright (C) 2012-2013
  * @brief      Critical class.  This is the data store for all UAVOs.  Allows
  *             other objects to access and change this data.  Takes care of
  *             propagating changes to the UAV.
@@ -23,7 +23,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
-package org.openpilot.uavtalk;
+package org.taulabs.uavtalk;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,10 +45,20 @@ public class UAVObjectManager {
 			newInstance.addObserver(o);
 		}
 	}
+	public void deleteNewInstanceObserver(Observer o) {
+		synchronized(newInstance) {
+			newInstance.deleteObserver(o);
+		}
+	}
 	private final CallbackListener newObject = new CallbackListener();
 	public void addNewObjectObserver(Observer o) {
 		synchronized(newObject) {
 			newObject.addObserver(o);
+		}
+	}
+	public void deleteNewObjectObserver(Observer o) {
+		synchronized(newObject) {
+			newObject.deleteObserver(o);
 		}
 	}
 	private final int MAX_INSTANCES = 10;

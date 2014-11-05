@@ -14,4 +14,9 @@
     <usb-device vendor-id="5824" product-id="1155" /><!--  Teensyduino  -->
     <usb-device vendor-id="4292" product-id="60000" /><!-- CP210x UART Bridge -->
     <usb-device vendor-id="1118" product-id="688"/>
+    <usb-device vendor-id="8352" product-id="16730" />  
+    <usb-device vendor-id="8352" product-id="16731" />  
+	<usb-device vendor-id="8352" product-id="16732" />  
+	<usb-device vendor-id="8352" product-id="16733" />  
+	<usb-device vendor-id="8352" product-id="16734" />
 </resources>

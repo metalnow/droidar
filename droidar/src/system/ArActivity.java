@@ -2,7 +2,7 @@ package system;
 
 import java.io.IOException;
 
-import org.openpilot.uavtalk.UAVObject;
+import org.taulabs.uavtalk.UAVObject;
 
 import de.rwth.ObjectManagerActivity;
 import drone.DroneManager;
@@ -145,8 +145,8 @@ public class ArActivity extends ObjectManagerActivity {
 	}
 
 	@Override
-	protected void onOPConnected() {
-		super.onOPConnected();
+	protected void onConnected() {
+		super.onConnected();
 
 		registerObjectUpdates(objMngr.getObjects());
 	}
