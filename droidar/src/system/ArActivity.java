@@ -148,7 +148,35 @@ public class ArActivity extends ObjectManagerActivity {
 	protected void onConnected() {
 		super.onConnected();
 
+		UAVObject obj = objMngr.getObject("AttitudeActual");
+		if (obj != null) {
+			registerObjectUpdates(obj);
+			objectUpdated(obj);
+		}		
+		/*
 		registerObjectUpdates(objMngr.getObjects());
+		
+		UAVObject obj = objMngr.getObject("Pitch");
+		if (obj != null) {
+			obj.updateRequested(); // Make sure this is correct and been updated
+			registerObjectUpdates(obj);
+			objectUpdated(obj);
+		}
+
+		obj = objMngr.getObject("Roll");
+		if (obj != null) {
+			obj.updateRequested(); // Make sure this is correct and been updated
+			registerObjectUpdates(obj);
+			objectUpdated(obj);
+		}
+		
+		obj = objMngr.getObject("Yaw");
+		if (obj != null) {
+			obj.updateRequested(); // Make sure this is correct and been updated
+			registerObjectUpdates(obj);
+			objectUpdated(obj);
+		}
+		*/		
 	}
 	
 	/**
@@ -157,23 +185,25 @@ public class ArActivity extends ObjectManagerActivity {
 	@Override
 	protected void objectUpdated(UAVObject obj) {
 		
-		double pitch = obj.getField("Pitch").getDouble();
-		double roll = obj.getField("Roll").getDouble();		
-		//double hdg = obj.getField("Heading").getDouble();
-		double hdg = obj.getField("Yaw").getDouble();
-		
-		float[] angles = new float[3];
-		float[] left = new float[3];
-		float[] up = new float[3];
-		float[] forward = new float[3];
-		
-		angles[0] = (float)pitch;
-		angles[1] = (float)hdg;
-		angles[2] = (float)roll;
-		
-		anglesToAxes( angles, left, up, forward );
-		
-		DroneManager.droneManager().setRotationVector(up[0], up[1], up[2]);
+		if (obj.getName().compareTo("AttitudeActual") == 0) {
+			double pitch = obj.getField("Pitch").getDouble();
+			double roll = obj.getField("Roll").getDouble();		
+			//double hdg = obj.getField("Heading").getDouble();
+			double hdg = obj.getField("Yaw").getDouble();
+			
+			float[] angles = new float[3];
+			float[] left = new float[3];
+			float[] up = new float[3];
+			float[] forward = new float[3];
+			
+			angles[0] = (float)pitch;
+			angles[1] = (float)hdg;
+			angles[2] = (float)roll;
+			
+			anglesToAxes( angles, left, up, forward );
+			
+			DroneManager.droneManager().setRotationVector(up[0], up[1], up[2]);			
+		}
 	}	
 	
 	private void anglesToAxes(float[] angles, float[] left, float[] up, float[] forward)
