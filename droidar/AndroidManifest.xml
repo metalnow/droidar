@@ -64,7 +64,7 @@
             android:theme="@android:style/Theme.Translucent" >
         </activity>
         
-        <service android:name="telemetry.OPTelemetryService"/>
+        <service android:name="telemetry.TelemetryService"/>
     </application>
 
     <!--
