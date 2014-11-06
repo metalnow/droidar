@@ -64,12 +64,12 @@ public class TelemetryService extends Service {
 	public static boolean WARN = LOGLEVEL > 0;
 
 	// Intent category
-	public final static String INTENT_CATEGORY_GCS        = "org.taulabs.intent.category.GCS";
+	public final static String INTENT_CATEGORY_GCS        = "ar.intent.category.GCS";
 
 	// Intent actions
-	public final static String INTENT_CHANNEL_OPENED      = "org.taulabs.intent.action.CHANNEL_OPENED";
-	public final static String INTENT_ACTION_CONNECTED    = "org.taulabs.intent.action.CONNECTED";
-	public final static String INTENT_ACTION_DISCONNECTED = "org.taulabs.intent.action.DISCONNECTED";
+	public final static String INTENT_CHANNEL_OPENED      = "ar.intent.action.CHANNEL_OPENED";
+	public final static String INTENT_ACTION_CONNECTED    = "ar.intent.action.CONNECTED";
+	public final static String INTENT_ACTION_DISCONNECTED = "ar.intent.action.DISCONNECTED";
 
 	// Variables for local message handler thread
 	private Looper mServiceLooper;
