@@ -54,10 +54,16 @@ public class FpvArSetup extends Setup {
 	public void _b_addWorldsToRenderer(GL1Renderer glRenderer,
 			GLFactory objectFactory, GeoObj currentPosition) {
 		
-		camera = new GLCamera(new Vec(0, 0, 1));
+		camera = new GLCamera(new Vec(0, 0, 0));
 		world = new World(camera);
 		
 		world.add(objectFactory.newTextObject("DroidAR", new Vec(10, 1, 1),
+				getActivity(), camera));
+
+		world.add(objectFactory.newTextObject("DroidAR1", new Vec(10, 1, 2),
+				getActivity(), camera));
+
+		world.add(objectFactory.newTextObject("DroidAR2", new Vec(10, 2, -1),
 				getActivity(), camera));
 		
 		glRenderer.addRenderElement(world);

@@ -88,7 +88,8 @@ public class ArActivity extends ObjectManagerActivity {
 	public void onStart() {
 		if (mySetupToUse != null)
 			mySetupToUse.onStart(this);
-		super.onStart();
+		super.onStart();			
+		DroneManager.droneManager().setRotationVector(0.03108196f, -0.6640874f, 0.06775749f);
 	}
 
 	@Override
@@ -202,7 +203,7 @@ public class ArActivity extends ObjectManagerActivity {
 			
 			anglesToAxes( angles, left, up, forward );
 			
-			DroneManager.droneManager().setRotationVector(up[0], up[1], up[2]);			
+			DroneManager.droneManager().setRotationVector(forward[0], forward[1], forward[2]);			
 		}
 	}	
 	
