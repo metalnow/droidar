@@ -89,7 +89,45 @@ public class ArActivity extends ObjectManagerActivity {
 		if (mySetupToUse != null)
 			mySetupToUse.onStart(this);
 		super.onStart();			
-		DroneManager.droneManager().setRotationVector(0.03108196f, -0.6640874f, 0.06775749f);
+		//DroneManager.droneManager().setRotationVector(0.03108196f, -0.6640874f, 0.06775749f);
+		DroneManager.droneManager().setRotationVector(-90.f, 0.f, 90.f);
+		
+		Thread update = new Thread() {
+			@Override
+			public void run() {
+				float pitch = 0;
+				float hdg = 0;
+				float roll = 0;
+				try {
+					Thread.sleep(5000);
+					while(true) {
+							/*
+							float[] angles = new float[3];
+							float[] left = new float[3];
+							float[] up = new float[3];
+							float[] forward = new float[3];
+							
+							angles[0] = (float)Math.toRadians(pitch);
+							angles[1] = (float)Math.toRadians(hdg);
+							angles[2] = (float)Math.toRadians(roll);
+							
+							anglesToAxes( angles, left, up, forward );
+							*/
+							DroneManager.droneManager().setRotationVector(pitch, hdg, roll);			
+							
+							//roll += 1;						
+							//if ( roll >= 360.0 )
+							//	roll -= 360.0;
+							Thread.sleep(10);						
+					}
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		};
+		update.start();
+		
 	}
 
 	@Override
@@ -192,18 +230,22 @@ public class ArActivity extends ObjectManagerActivity {
 			//double hdg = obj.getField("Heading").getDouble();
 			double hdg = obj.getField("Yaw").getDouble();
 			
+			/*
 			float[] angles = new float[3];
 			float[] left = new float[3];
 			float[] up = new float[3];
 			float[] forward = new float[3];
 			
-			angles[0] = (float)pitch;
-			angles[1] = (float)hdg;
-			angles[2] = (float)roll;
+			angles[0] = (float)(pitch);
+			angles[1] = (float)(hdg);
+			angles[2] = (float)(roll);
 			
 			anglesToAxes( angles, left, up, forward );
 			
-			DroneManager.droneManager().setRotationVector(forward[0], forward[1], forward[2]);			
+			DroneManager.droneManager().setRotationVector(forward[0], forward[1], forward[2]);
+			*/			
+			
+			DroneManager.droneManager().setRotationVector((float)pitch, (float)roll, (float)hdg);
 		}
 	}	
 	
