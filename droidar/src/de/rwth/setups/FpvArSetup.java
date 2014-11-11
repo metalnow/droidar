@@ -12,6 +12,7 @@ import actions.ActionMoveCameraBuffered;
 import actions.ActionRotateCameraBuffered;
 import actions.ActionWASDMovement;
 import actions.ActionWaitForAccuracy;
+import actions.ActionWithRemoteSensorData;
 import android.app.Activity;
 import android.location.Location;
 import android.view.SurfaceView;
@@ -29,7 +30,7 @@ public class FpvArSetup extends Setup {
 
 	private GLCamera camera;
 	private World world;
-	private ActionRotateCameraBuffered rotateGLCameraAction;
+	private ActionWithRemoteSensorData rotateGLCameraAction;
 	
 	public FpvArSetup() {
 		
@@ -56,7 +57,7 @@ public class FpvArSetup extends Setup {
 		
 		camera = new GLCamera(new Vec(0, 0, 0));
 		world = new World(camera);
-		
+/*		
 		world.add(objectFactory.newTextObject("DroidAR", new Vec(10, 1, 1),
 				getActivity(), camera));
 
@@ -64,6 +65,24 @@ public class FpvArSetup extends Setup {
 				getActivity(), camera));
 
 		world.add(objectFactory.newTextObject("DroidAR2", new Vec(10, 2, -1),
+				getActivity(), camera));
+*/
+		world.add(objectFactory.newTextObject("DroidAR3", new Vec(10, 0, 0),
+				getActivity(), camera));
+
+		world.add(objectFactory.newTextObject("DroidAR4", new Vec(0, 10, 0),
+				getActivity(), camera));
+
+		world.add(objectFactory.newTextObject("DroidAR5", new Vec(0, 0, 10),
+				getActivity(), camera));
+
+		world.add(objectFactory.newTextObject("DroidAR6", new Vec(-10, 0, 0),
+				getActivity(), camera));
+
+		world.add(objectFactory.newTextObject("DroidAR7", new Vec(0, -10, 0),
+				getActivity(), camera));
+
+		world.add(objectFactory.newTextObject("DroidAR8", new Vec(0, 0, -10),
 				getActivity(), camera));
 		
 		glRenderer.addRenderElement(world);
@@ -74,13 +93,12 @@ public class FpvArSetup extends Setup {
 	public void _c_addActionsToEvents(AbstractEventManager eventManager,
 			CustomGLSurfaceView arView, SystemUpdater updater) {
 		
-		rotateGLCameraAction = new ActionRotateCameraBuffered(camera);
+		rotateGLCameraAction = new ActionWithRemoteSensorData(camera);
 		updater.addObjectToUpdateCycle(rotateGLCameraAction);
 		
 		eventManager.addOnOrientationChangedAction(rotateGLCameraAction);
 
-		eventManager.addOnTrackballAction(new ActionMoveCameraBuffered(camera,
-				5, 25));
+		//eventManager.addOnTrackballAction(new ActionMoveCameraBuffered(camera, 5, 25));
 		
 		//eventManager.addOnLocationChangedAction(new ActionCalcRelativePos(world, camera));
 

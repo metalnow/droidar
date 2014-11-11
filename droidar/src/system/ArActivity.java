@@ -90,7 +90,8 @@ public class ArActivity extends ObjectManagerActivity {
 			mySetupToUse.onStart(this);
 		super.onStart();			
 		//DroneManager.droneManager().setRotationVector(0.03108196f, -0.6640874f, 0.06775749f);
-		DroneManager.droneManager().setRotationVector(-90.f, 0.f, 90.f);
+		//DroneManager.droneManager().setRotationVector(270.f, 0.f, 90.f);
+		DroneManager.droneManager().setRotationVector(0.f, 0.f, 0.f);
 		
 		Thread update = new Thread() {
 			@Override
@@ -115,10 +116,10 @@ public class ArActivity extends ObjectManagerActivity {
 							*/
 							DroneManager.droneManager().setRotationVector(pitch, hdg, roll);			
 							
-							//roll += 1;						
-							//if ( roll >= 360.0 )
-							//	roll -= 360.0;
-							Thread.sleep(10);						
+							//hdg += 1;						
+							//if ( hdg >= 360.0 )
+							//	hdg -= 360.0;
+							Thread.sleep(50);						
 					}
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
@@ -126,7 +127,7 @@ public class ArActivity extends ObjectManagerActivity {
 				}
 			}
 		};
-		update.start();
+		//update.start();
 		
 	}
 
@@ -245,7 +246,7 @@ public class ArActivity extends ObjectManagerActivity {
 			DroneManager.droneManager().setRotationVector(forward[0], forward[1], forward[2]);
 			*/			
 			
-			DroneManager.droneManager().setRotationVector((float)pitch, (float)roll, (float)hdg);
+			DroneManager.droneManager().setRotationVector((float)pitch, (float)hdg, (float)roll);
 		}
 	}	
 	

@@ -66,52 +66,7 @@ public class GLUtilityClass {
 	 */
 	public static void getRotationMatrixFromVector(float[] R,
 			float[] rotationVector) {
-
-		float[] angles = new float[3];
-		float[] left = new float[3];
-		float[] up = new float[3];
-		float[] forward = new float[3];
 		
-		angles[0] = (float)Math.toRadians(rotationVector[0]);
-		angles[1] = (float)Math.toRadians(rotationVector[1]);
-		angles[2] = (float)Math.toRadians(rotationVector[2]);
-		
-		anglesToAxes( rotationVector, left, up, forward );
-		
-		
-		if (R.length == 9) {
-			R[0] = left[0];
-			R[1] = left[1];
-			R[2] = left[2];
-
-			R[3] = up[0];
-			R[4] = up[1];
-			R[5] = up[2];
-
-			R[6] = forward[0];
-			R[7] = forward[1];
-			R[8] = forward[2];
-		} else if (R.length == 16) {
-			R[0] = left[0];
-			R[1] = left[1];
-			R[2] = left[2];
-			R[3] = 0.0f;
-
-			R[4] = up[0];
-			R[5] = up[1];
-			R[6] = up[2];
-			R[7] = 0.0f;
-
-			R[7] = forward[0];
-			R[9] = forward[1];
-			R[10] = forward[2];
-			R[11] = 0.0f;
-
-			R[12] = R[13] = R[14] = 0.0f;
-			R[15] = 1.0f;
-		}		
-		
-		/*
 		float q0;
 		float q1 = rotationVector[0];
 		float q2 = rotationVector[1];
@@ -164,10 +119,53 @@ public class GLUtilityClass {
 
 			R[12] = R[13] = R[14] = 0.0f;
 			R[15] = 1.0f;
-		}
-		*/
+		}		
+		
 	}
 
+	public static void getRotationMatrixFromAttitude(float[] R,
+			float[] rotationVector) {
+
+		float[] left = new float[3];
+		float[] up = new float[3];
+		float[] forward = new float[3];
+			
+		anglesToAxes( rotationVector, left, up, forward );
+				
+		if (R.length == 9) {
+			R[0] = left[0];
+			R[1] = left[1];
+			R[2] = left[2];
+
+			R[3] = up[0];
+			R[4] = up[1];
+			R[5] = up[2];
+
+			R[6] = forward[0];
+			R[7] = forward[1];
+			R[8] = forward[2];
+		} else if (R.length == 16) {
+			R[0] = left[0];
+			R[1] = left[1];
+			R[2] = left[2];
+			R[3] = 0.0f;
+
+			R[4] = up[0];
+			R[5] = up[1];
+			R[6] = up[2];
+			R[7] = 0.0f;
+
+			R[7] = forward[0];
+			R[9] = forward[1];
+			R[10] = forward[2];
+			R[11] = 0.0f;
+
+			R[12] = R[13] = R[14] = 0.0f;
+			R[15] = 1.0f;
+		}		
+	}
+	
+	
 	private static void anglesToAxes(float[] angles, float[] left, float[] up, float[] forward)
 	{
 		float DEG2RAD = 3.141593f / 180f;

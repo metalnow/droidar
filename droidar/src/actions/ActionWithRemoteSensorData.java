@@ -8,10 +8,8 @@ import util.Calculus;
 import worldData.Updateable;
 import actions.algos.Algo;
 import android.hardware.SensorManager;
-import android.view.MotionEvent;
-import android.view.Surface;
 
-public abstract class ActionWithSensorProcessing extends Action {
+public class ActionWithRemoteSensorData extends Action {
 
 	private static final String LOG_TAG = "ActionWithSensorProcessing";
 
@@ -40,46 +38,21 @@ public abstract class ActionWithSensorProcessing extends Action {
 
 	private final int screenRotation;
 
-	public ActionWithSensorProcessing(GLCamRotationController targetCamera) {
+	public ActionWithRemoteSensorData(GLCamRotationController targetCamera) {
 		myTargetCamera = targetCamera;
-		initAlgos();
 		screenRotation = Setup.getScreenOrientation();
-	}
-
-	protected abstract void initAlgos();
-
-	@Override
-	public boolean onTouchMove(MotionEvent e1, MotionEvent e2,
-			float screenDeltaX, float screenDeltaY) {
-		myTargetCamera.changeZAngleBuffered(screenDeltaY);
-		return true;
-	}
-
+	}	
+	
 	@Override
 	public synchronized boolean onAccelChanged(float[] values) {
-
-		if (accelAlgo != null) {
-			myNewAccelValues = accelAlgo.execute(values);
-		} else {
-			myNewAccelValues = values;
-		}
-		accelChanged = true;
-		return true;
-
+		return false;
 	}
 
 	@Override
 	public synchronized boolean onMagnetChanged(float[] values) {
-		if (magnetAlgo != null) {
-			myNewMagnetValues = magnetAlgo.execute(values);
-		} else {
-			myNewMagnetValues = values;
-		}
-		magnetoChanged = true;
-		return true;
-
-	}
-
+		return false;
+	}	
+	
 	@Override
 	public synchronized boolean onOrientationChanged(float[] values) {
 		if (orientAlgo != null) {
@@ -94,41 +67,16 @@ public abstract class ActionWithSensorProcessing extends Action {
 
 	@Override
 	public synchronized boolean update(float timeDelta, Updateable parent) {
-		if (magnetoChanged || accelChanged || orientationDataChanged) {
-			if (magnetoChanged || accelChanged) {
-				// if accel or magnet changed:
-				if (accelChanged) {
-					accelChanged = false;
-					if (accelBufferAlgo != null) {
-						accelBufferAlgo.execute(myAccelValues,
-								myNewAccelValues, timeDelta);
-					} else {
-						myAccelValues = myNewAccelValues;
-					}
-				}
-				if (magnetoChanged) {
-					magnetoChanged = false;
-					if (magnetBufferAlgo != null) {
-						magnetBufferAlgo.execute(myMagnetValues,
-								myNewMagnetValues, timeDelta);
-					} else {
-						myMagnetValues = myNewMagnetValues;
-					}
-				}
-				// first calc the unrotated matrix:
-				SensorManager.getRotationMatrix(unrotatedMatrix, null,
-						myAccelValues, myMagnetValues);
-			} else if (orientationDataChanged) {
-				orientationDataChanged = false;
-				if (orientationBufferAlgo != null) {
-					orientationBufferAlgo.execute(myOrientValues,
-							myNewOrientValues, timeDelta);
-				} else {
-					myOrientValues = myNewOrientValues;
-				}
-				GLUtilityClass.getRotationMatrixFromVector(unrotatedMatrix,
-						myOrientValues);
+		if (orientationDataChanged) {
+			orientationDataChanged = false;
+			if (orientationBufferAlgo != null) {
+				orientationBufferAlgo.execute(myOrientValues,
+						myNewOrientValues, timeDelta);
+			} else {
+				myOrientValues = myNewOrientValues;
 			}
+			GLUtilityClass.getRotationMatrixFromAttitude(unrotatedMatrix,
+					myOrientValues);
 
 			/*
 			 * Then in addition the values have to be remapped of the device is
@@ -150,13 +98,13 @@ public abstract class ActionWithSensorProcessing extends Action {
 				/*
 				 * TODO do this for all 4 rotation possibilities!
 				 */
-				
+				/*
 				if (screenRotation == Surface.ROTATION_90) {
 					// then rotate it according to the screen rotation:
 					SensorManager.remapCoordinateSystem(unrotatedMatrix,
 							SensorManager.AXIS_Y, SensorManager.AXIS_MINUS_X,
 							rotationMatrix);
-				} else {
+				} else */{
 					/*
 					 * else its in portrait mode so no remapping needed
 					 */
@@ -166,12 +114,6 @@ public abstract class ActionWithSensorProcessing extends Action {
 			myTargetCamera.setRotationMatrix(rotationMatrix, 0);
 		}
 		return true;
-	}
-
-	@Override
-	public boolean onReleaseTouchMove() {
-		myTargetCamera.resetBufferedAngle();
-		return true;
-	}
-
+	}	
+	
 }
