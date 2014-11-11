@@ -92,7 +92,8 @@ public class ArActivity extends ObjectManagerActivity {
 		//DroneManager.droneManager().setRotationVector(0.03108196f, -0.6640874f, 0.06775749f);
 		//DroneManager.droneManager().setRotationVector(270.f, 0.f, 90.f);
 		DroneManager.droneManager().setRotationVector(0.f, 0.f, 0.f);
-		
+		// 25.058715, 121.585141
+		// 25.064906, 121.581794
 		Thread update = new Thread() {
 			@Override
 			public void run() {
