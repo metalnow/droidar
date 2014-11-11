@@ -1,9 +1,12 @@
 package events;
 
+import android.location.Location;
+import android.location.LocationManager;
 import listeners.DroneListener;
 
 public class DroneEvent {
 	public final float[] values = new float[3];
+	public final Location location = new Location(LocationManager.GPS_PROVIDER);
 	
 	private DroneListener droneListener;
 	public Drone drone = new Drone();

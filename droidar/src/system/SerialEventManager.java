@@ -51,9 +51,9 @@ public class SerialEventManager extends AbstractEventManager implements DroneLis
 	
 	@Override
 	public void onReceivedDataChanged(DroneEvent event) {
-		float[] values = event.values.clone();
 
 		if (onOrientationChangedList != null) {
+			float[] values = event.values.clone();
 
 			for (int i = 0; i < onOrientationChangedList.size(); i++) {
 
@@ -74,7 +74,7 @@ public class SerialEventManager extends AbstractEventManager implements DroneLis
 		if ( onLocationChangedList != null ) {
 			for (int i = 0; i < onOrientationChangedList.size(); i++) {
 				if (event.drone.getType() == Drone.TYPE_POSITION) {
-					//onLocationChangedList.get(i).onLocationChanged(location);
+					onLocationChangedList.get(i).onLocationChanged(event.location);
 				}
 				if (event.drone.getType() == Drone.TYPE_ALTITUDE) {
 					

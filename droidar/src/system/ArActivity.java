@@ -92,6 +92,7 @@ public class ArActivity extends ObjectManagerActivity {
 		//DroneManager.droneManager().setRotationVector(0.03108196f, -0.6640874f, 0.06775749f);
 		//DroneManager.droneManager().setRotationVector(270.f, 0.f, 90.f);
 		DroneManager.droneManager().setRotationVector(0.f, 0.f, 0.f);
+		DroneManager.droneManager().setPosition(121.585141f, 25.058715f);
 		// 25.058715, 121.585141
 		// 25.064906, 121.581794
 		Thread update = new Thread() {
@@ -115,7 +116,8 @@ public class ArActivity extends ObjectManagerActivity {
 							
 							anglesToAxes( angles, left, up, forward );
 							*/
-							DroneManager.droneManager().setRotationVector(pitch, hdg, roll);			
+							//DroneManager.droneManager().setRotationVector(pitch, hdg, roll);			
+							DroneManager.droneManager().setPosition(121.585141f, 25.058715f);
 							
 							//hdg += 1;						
 							//if ( hdg >= 360.0 )
@@ -128,7 +130,7 @@ public class ArActivity extends ObjectManagerActivity {
 				}
 			}
 		};
-		//update.start();
+		update.start();
 		
 	}
 
@@ -249,43 +251,6 @@ public class ArActivity extends ObjectManagerActivity {
 			
 			DroneManager.droneManager().setRotationVector((float)pitch, (float)hdg, (float)roll);
 		}
-	}	
-	
-	private void anglesToAxes(float[] angles, float[] left, float[] up, float[] forward)
-	{
-	    float DEG2RAD = 3.141593f / 180;
-	    float sx, sy, sz, cx, cy, cz;
-	    double theta;
-
-	    // rotation angle about X-axis (pitch)
-	    theta = angles[0] * DEG2RAD;
-	    sx = (float)Math.sin(theta);
-	    cx = (float)Math.cos(theta);
-
-	    // rotation angle about Y-axis (yaw)
-	    theta = angles[1] * DEG2RAD;
-	    sy = (float)Math.sin(theta);
-	    cy = (float)Math.cos(theta);
-
-	    // rotation angle about Z-axis (roll)
-	    theta = angles[2] * DEG2RAD;
-	    sz = (float)Math.sin(theta);
-	    cz = (float)Math.cos(theta);
-
-	    // determine left axis
-	    left[0] = cy*cz;
-	    left[1] = sx*sy*cz + cx*sz;
-	    left[2] = -cx*sy*cz + sx*sz;
-
-	    // determine up axis
-	    up[0] = -cy*sz;
-	    up[1] = -sx*sy*sz + cx*cz;
-	    up[2] = cx*sy*sz + sx*cz;
-
-	    // determine forward axis
-	    forward[0] = sy;
-	    forward[1] = -sx*cy;
-	    forward[2] = cx*cy;
 	}	
 	
 

@@ -1,5 +1,6 @@
 package drone;
 
+import android.location.Location;
 import listeners.DroneListener;
 import events.DroneEvent;
 import events.DroneEvent.Drone;
@@ -43,14 +44,23 @@ public class DroneManager /*implements Runnable*/ {
 
 	public void setPosition( float lo, float la ) {
 		event.drone.setType(Drone.TYPE_POSITION);
-				
-		event.values[0] = lo;
-		event.values[1] = la;
+
+		event.location.reset();
+		event.location.setLongitude(lo);
+		event.location.setLatitude(la);
 		
 		event.receivedData();
 	}
 	
-	
+	public void setLocation( Location location ) {
+		event.drone.setType(Drone.TYPE_POSITION);
+		
+		event.location.set(location);
+		
+		event.receivedData();
+		
+	}
+		
 	public void setRotationVector( float x, float y, float z ) {
 		event.drone.setType(Drone.TYPE_ROTATION_VECTOR);
 				

@@ -1,5 +1,7 @@
 package de.rwth.setups;
 
+import commands.Command;
+import commands.ui.CommandInUiThread;
 import commands.ui.CommandShowToast;
 
 import geo.GeoObj;
@@ -41,13 +43,15 @@ public class FpvArSetup extends Setup {
 	private final GeoObj posC;
 	private final GeoObj posD;
 	private final GeoObj posE;
+	private final GeoObj posH;
 	
 	public FpvArSetup() {
-		posA = new GeoObj(25.059303, 121.583019);
-		posB = new GeoObj(25.055143, 121.589778);
-		posC = new GeoObj(25.066126, 121.580637);
-		posD = new GeoObj(25.062277, 121.578834);
-		posE = new GeoObj(25.062938, 121.589885);
+		posA = new GeoObj(121.583019, 25.059303);
+		posB = new GeoObj(121.589778, 25.055143);
+		posC = new GeoObj(121.580637, 25.066126);
+		posD = new GeoObj(121.578834, 25.062277);
+		posE = new GeoObj(121.589885, 25.062938);
+		posH = new GeoObj(121.585141, 25.058715);
 		
 	}
 
@@ -105,6 +109,7 @@ public class FpvArSetup extends Setup {
 		spawnObj(posC, GLFactory.getInstance().newCircle(Color.red()));
 		spawnObj(posD, GLFactory.getInstance().newCircle(Color.green()));
 		spawnObj(posE, GLFactory.getInstance().newCircle(Color.blue()));		
+				
 		
 		glRenderer.addRenderElement(world);
 
@@ -128,6 +133,7 @@ public class FpvArSetup extends Setup {
 		updater.addObjectToUpdateCycle(rotateGLCameraAction);
 		
 		eventManager.addOnOrientationChangedAction(rotateGLCameraAction);
+		eventManager.addOnLocationChangedAction(rotateGLCameraAction);
 
 		//eventManager.addOnTrackballAction(new ActionMoveCameraBuffered(camera, 5, 25));
 		
@@ -143,7 +149,60 @@ public class FpvArSetup extends Setup {
 	@Override
 	public void _e2_addElementsToGuiSetup(GuiSetup guiSetup, Activity activity) {
 		// TODO Auto-generated method stub
-
+		spawnObj(posH, GLFactory.getInstance().newArrow());
+		addSpawnButtonToUI(posA, "Spawn at posA", guiSetup);
+		addSpawnButtonToUI(posH, "Spawn at posH", guiSetup);
+		
+		addGpsPosOutputButtons(guiSetup);
 	}
 
+	private void addGpsPosOutputButtons(GuiSetup guiSetup) {
+		guiSetup.addButtonToBottomView(new CommandInUiThread() {
+
+			@Override
+			public void executeInUiThread() {
+				Vec pos = camera.getGPSPositionVec();
+				String text = "latitude=" + pos.y + ", longitude=" + pos.x;
+				CommandShowToast.show(myTargetActivity, text);
+			}
+		}, "Show Camera GPS pos");
+
+		guiSetup.addButtonToBottomView(new CommandInUiThread() {
+
+			@Override
+			public void executeInUiThread() {
+				GeoObj pos = EventManager.getInstance()
+						.getCurrentLocationObject();
+				String text = "latitude=" + pos.getLatitude() + ", longitude="
+						+ pos.getLongitude();
+				CommandShowToast.show(myTargetActivity, text);
+			}
+		}, "Show real GPS pos");
+
+		guiSetup.addButtonToBottomView(new CommandInUiThread() {
+
+			@Override
+			public void executeInUiThread() {
+				GeoObj pos = EventManager.getInstance()
+						.getZeroPositionLocationObject();
+				String text = "latitude=" + pos.getLatitude() + ", longitude="
+						+ pos.getLongitude();
+				CommandShowToast.show(myTargetActivity, text);
+			}
+		}, "Show zero GPS pos");
+	}
+	
+	private void addSpawnButtonToUI(final GeoObj pos, String buttonText,
+			GuiSetup guiSetup) {
+		guiSetup.addButtonToTopView(new Command() {
+			@Override
+			public boolean execute() {
+
+				MeshComponent mesh = GLFactory.getInstance().newArrow();
+				spawnObj(pos, mesh);
+				return true;
+			}
+
+		}, buttonText);
+	}	
 }
