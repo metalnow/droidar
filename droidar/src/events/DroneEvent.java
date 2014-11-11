@@ -35,6 +35,8 @@ public class DroneEvent {
 	  
 	  public static final int TYPE_ALTITUDE = 5;
 	  
+	  public static final int TYPE_POSITION = 10;
+	  
 	  public static final int TYPE_ROTATION_VECTOR = 11;
 	  
 	  private int type = -1;

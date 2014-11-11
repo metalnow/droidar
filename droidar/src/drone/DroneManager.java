@@ -40,6 +40,16 @@ public class DroneManager /*implements Runnable*/ {
 	public void stop() {
 		running = false;
 	}
+
+	public void setPosition( float lo, float la ) {
+		event.drone.setType(Drone.TYPE_POSITION);
+				
+		event.values[0] = lo;
+		event.values[1] = la;
+		
+		event.receivedData();
+	}
+	
 	
 	public void setRotationVector( float x, float y, float z ) {
 		event.drone.setType(Drone.TYPE_ROTATION_VECTOR);

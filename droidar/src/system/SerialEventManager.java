@@ -71,6 +71,18 @@ public class SerialEventManager extends AbstractEventManager implements DroneLis
 			}
 		}
 		
+		if ( onLocationChangedList != null ) {
+			for (int i = 0; i < onOrientationChangedList.size(); i++) {
+				if (event.drone.getType() == Drone.TYPE_POSITION) {
+					//onLocationChangedList.get(i).onLocationChanged(location);
+				}
+				if (event.drone.getType() == Drone.TYPE_ALTITUDE) {
+					
+				}
+			}
+			
+		}
+		
 	}
 		
 
