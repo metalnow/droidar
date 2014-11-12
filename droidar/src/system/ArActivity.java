@@ -98,7 +98,7 @@ public class ArActivity extends ObjectManagerActivity {
 		Thread update = new Thread() {
 			@Override
 			public void run() {
-				float pitch = 0;
+				float pitch = -90;
 				float hdg = 0;
 				float roll = 0;
 				try {
@@ -116,12 +116,12 @@ public class ArActivity extends ObjectManagerActivity {
 							
 							anglesToAxes( angles, left, up, forward );
 							*/
-							//DroneManager.droneManager().setRotationVector(pitch, hdg, roll);			
-							DroneManager.droneManager().setPosition(121.585141f, 25.058715f);
+							DroneManager.droneManager().setRotationVector(pitch, hdg, roll);			
+							//DroneManager.droneManager().setPosition(121.585141f, 25.058715f);
 							
-							//hdg += 1;						
-							//if ( hdg >= 360.0 )
-							//	hdg -= 360.0;
+							roll += 1;						
+							if ( roll >= 360.0 )
+								roll -= 360.0;
 							Thread.sleep(50);						
 					}
 				} catch (InterruptedException e) {

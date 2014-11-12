@@ -1,6 +1,7 @@
 package de.rwth.setups;
 
 import commands.Command;
+import commands.DebugCommandPositionEvent;
 import commands.ui.CommandInUiThread;
 import commands.ui.CommandShowToast;
 
@@ -74,7 +75,7 @@ public class FpvArSetup extends Setup {
 	public void _b_addWorldsToRenderer(GL1Renderer glRenderer,
 			GLFactory objectFactory, GeoObj currentPosition) {
 		
-		camera = new GLCamera(new Vec(0, 0, 0));
+		camera = new GLCamera();
 		world = new World(camera);
 /*		
 		world.add(objectFactory.newTextObject("DroidAR", new Vec(10, 1, 1),
@@ -118,9 +119,9 @@ public class FpvArSetup extends Setup {
 	private void spawnObj(final GeoObj pos, MeshComponent mesh) {
 		GeoObj x = new GeoObj(pos);
 
-		mesh.setPosition(Vec.getNewRandomPosInXYPlane(new Vec(), 0.1f, 1f));
+		mesh.setPosition(new Vec(10, 0, 0)/*Vec.getNewRandomPosInXYPlane(new Vec(), 0.1f, 1f)*/);
 		x.setComp(mesh);
-		//CommandShowToast.show(myTargetActivity, "Object spawned at " + x.getMySurroundGroup().getPosition());
+		CommandShowToast.show(myTargetActivity, "Object spawned at " + x.getMySurroundGroup().getPosition());
 		world.add(x);
 	}
 	
@@ -150,8 +151,27 @@ public class FpvArSetup extends Setup {
 	public void _e2_addElementsToGuiSetup(GuiSetup guiSetup, Activity activity) {
 		// TODO Auto-generated method stub
 		spawnObj(posH, GLFactory.getInstance().newArrow());
+		
+		guiSetup.addButtonToBottomView(new DebugCommandPositionEvent(rotateGLCameraAction,
+				posA), "Go to pos A");
+		guiSetup.addButtonToBottomView(new DebugCommandPositionEvent(rotateGLCameraAction,
+				posB), "Go to pos B");
+		guiSetup.addButtonToBottomView(new DebugCommandPositionEvent(rotateGLCameraAction,
+				posC), "Go to pos C");
+		guiSetup.addButtonToBottomView(new DebugCommandPositionEvent(rotateGLCameraAction,
+				posD), "Go to pos D");
+		guiSetup.addButtonToBottomView(new DebugCommandPositionEvent(rotateGLCameraAction,
+				posE), "Go to pos E");
+		guiSetup.addButtonToBottomView(new DebugCommandPositionEvent(rotateGLCameraAction,
+				posH), "Go to pos H");
+		
+		
 		addSpawnButtonToUI(posA, "Spawn at posA", guiSetup);
-		addSpawnButtonToUI(posH, "Spawn at posH", guiSetup);
+		addSpawnButtonToUI(posB, "Spawn at posB", guiSetup);
+		addSpawnButtonToUI(posC, "Spawn at posC", guiSetup);
+		addSpawnButtonToUI(posD, "Spawn at posD", guiSetup);
+		addSpawnButtonToUI(posE, "Spawn at posE", guiSetup);
+		//addSpawnButtonToUI(posH, "Spawn at posH", guiSetup);
 		
 		addGpsPosOutputButtons(guiSetup);
 	}
